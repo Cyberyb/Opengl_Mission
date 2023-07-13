@@ -47,6 +47,12 @@
     <None Include="DepthShader.frag">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="Quard.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="Quard.frag">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">

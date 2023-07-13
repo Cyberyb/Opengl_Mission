@@ -29,6 +29,8 @@
     <None Include="DepthShader.vert" />
     <None Include="PointsMesh.frag" />
     <None Include="PointsMesh.vert" />
+    <None Include="Quard.frag" />
+    <None Include="Quard.vert" />
     <None Include="SphereMesh.frag" />
     <None Include="SphereMesh.vert" />
   </ItemGroup>

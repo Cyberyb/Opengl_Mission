@@ -26,6 +26,7 @@ void processMouseButton(GLFWwindow* window, int& count,bool &changed);
 //void renderSphereMesh(const Shader &shader);
 //void renderSphereCamera(const Shader& shader);
 //void renderSpherePoints(const Shader& shader);
+void renderQuad();
 
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
@@ -124,6 +125,7 @@ int main()
 	Shader cameraShader("CameraMesh.vert", "CameraMesh.frag");
 	Shader pointsShader("PointsMesh.vert", "PointsMesh.frag");
 	Shader depthShader("DepthShader.vert", "DepthShader.frag");
+	Shader QuardShader("Quard.vert", "Quard.frag");
 	
 	//获取Mesh
 	SphereMesh sphereM("mesh.txt");
@@ -167,7 +169,7 @@ int main()
 
 	depthShader.use();
 	//glUniformMatrix4fv(glGetUniformLocation(depthShader.ID, "cameraSpaceMat"), 1, GL_FALSE, &cameraSpaceMat[0][0]);
-	depthShader.setMat4("perspective", glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 200.0f));
+	depthShader.setMat4("perspective", glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f));
 	depthShader.setMat4("model", glm::mat4(1.0f));
 	//depthShader.setMat4("cameraSpaceMat", glm::lookAt(cameraposition, cameraposition + camerafront, up));
 	glm::vec3 dir, right, up;
@@ -224,24 +226,24 @@ int main()
 	//sphereShader.use();
 
 	/*---------------------------深度贴图------------------------------*/
-	//unsigned int depthMapFBO;//创建帧缓冲
-	//glGenFramebuffers(1, &depthMapFBO);
-	//// create depth texture
-	//unsigned int depthMap;//创建深度贴图
-	//glGenTextures(1, &depthMap);
-	//glBindTexture(GL_TEXTURE_2D, depthMap);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	unsigned int depthMapFBO;//创建帧缓冲
+	glGenFramebuffers(1, &depthMapFBO);
+	// create depth texture
+	unsigned int depthMap;//创建深度贴图
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	//// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
-	//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	//glDrawBuffer(GL_NONE);
-	//glReadBuffer(GL_NONE);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 
@@ -264,6 +266,7 @@ int main()
 
 		processInput(window);
 		processMouseButton(window, viewMatCount, mouseButtonChanged);
+		//更新view矩阵
 		GetDirRightUp(camerarot[viewMatCount], dir, right, up);
 		view = glm::lookAt(camerapos[viewMatCount], camerapos[viewMatCount] + dir, up);
 		//view = worldtoview[viewMatCount];
@@ -271,11 +274,15 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
 		depthShader.use();
 		depthShader.setMat4("view", view);
 
 		/*----------------画球幕-----------------*/
-		sphereShader.use();
+		//sphereShader.use();
 
 		//MVP Matrix
 
@@ -307,7 +314,7 @@ int main()
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
-		cameraShader.use();
+		//cameraShader.use();
 
 		cameraShader.setMat4("view", view);
 		cameraShader.setMat4("proj", projection);
@@ -321,7 +328,7 @@ int main()
 		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
-		pointsShader.use();
+		//pointsShader.use();
 
 		pointsShader.setMat4("view", view);
 		pointsShader.setMat4("proj", projection);
@@ -335,8 +342,15 @@ int main()
 
 		/*---------------画深度贴图---------------*/
 		//depthShader.use();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+		QuardShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		renderQuad();
 
 		//收尾阶段
 		glfwSwapBuffers(window);
@@ -355,45 +369,34 @@ int main()
 	return 0;
 }
 
-//unsigned int sphereVAO = 0;
-//unsigned int sphereVBO = 0;
-//unsigned int sphereEBO = 0;
-//void renderSphereMesh(std::vector<glm::vec3> &vert, std::vector<glm::uvec3> &index)
-//{
-//	if (sphereVAO == 0)
-//	{
-//		glGenVertexArrays(1, &sphereVAO);
-//		glGenBuffers(1, &sphereVBO);
-//
-//		glBindBuffer(GL_ARRAY_BUFFER, sphereVBO);
-//		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * vert.size(), vert.data(), GL_STATIC_DRAW);
-//		//绑定EBO并传入数据
-//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereEBO);
-//		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 30000 * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
-//
-//		//位置属性
-//		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-//		glEnableVertexAttribArray(0);
-//		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Normal
-//		glEnableVertexAttribArray(1);
-//
-//		glBindBuffer(GL_ARRAY_BUFFER, 0);
-//		glBindVertexArray(0);
-//	}
-//	//render sphere mesh
-//	glBindVertexArray(sphereVAO);
-//	glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
-//	glBindVertexArray(0);
-//}
-
-//void mousebutton_callback(GLFWwindow* window, int button, int action, int mods)
-//{
-//	if (button == GLFW_MOUSE_BUTTON_LEFT) 
-//	{
-//
-//	}
-//
-//}
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
 
 
 void mouse_callback(GLFWwindow*window, double xpos, double ypos)//鼠标坐标的调用，用于控制视角
