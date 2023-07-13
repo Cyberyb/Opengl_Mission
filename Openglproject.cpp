@@ -18,7 +18,9 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+//void mousebutton_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow* window);
+void processMouseButton(GLFWwindow* window, int& count,bool &changed);
 
 //render函数
 //void renderSphereMesh(const Shader &shader);
@@ -149,16 +151,14 @@ int main()
 
 
 	//提前计算16个点的变换矩阵
-	//glm::mat4 w2v[16];
 	vector<glm::mat4> worldtoview;
 	for (int k = 0; k < cameraVert.size(); k++) {
 		glm::vec3 r = camerarot[k];
 		glm::vec3 camera = camerapos[k];
 		glm::mat4 worldToView = viewMatrix(-camera, r);
 		worldtoview.push_back(worldToView);
-		//w2v[k] = worldToView;
 	}
-	cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << endl;
+	cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
 
 	glm::mat4 cameraSpaceMat = worldtoview[0];
 	//Test
@@ -251,7 +251,10 @@ int main()
 
 	glDepthFunc(GL_LESS);
 
+	int viewMatCount = 0;//用于16个摄像机的视角切换计数
 	//渲染循环
+	bool mouseButtonChanged = true;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -260,11 +263,16 @@ int main()
 		lasttime = currenttime;
 
 		processInput(window);
+		processMouseButton(window, viewMatCount, mouseButtonChanged);
+		GetDirRightUp(camerarot[viewMatCount], dir, right, up);
+		view = glm::lookAt(camerapos[viewMatCount], camerapos[viewMatCount] + dir, up);
+		//view = worldtoview[viewMatCount];
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		depthShader.use();
+		depthShader.setMat4("view", view);
 
 		/*----------------画球幕-----------------*/
 		sphereShader.use();
@@ -299,31 +307,31 @@ int main()
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
-		//cameraShader.use();
+		cameraShader.use();
 
-		//cameraShader.setMat4("view", view);
-		//cameraShader.setMat4("proj", projection);
+		cameraShader.setMat4("view", view);
+		cameraShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
 		//glm::mat4 model_c = glm::mat4(1.0f);
-		//cameraShader.setMat4("model", model);
+		cameraShader.setMat4("model", model);
 
 
-		//glBindVertexArray(cameraVAO);
-		//glPointSize(20.0f);
-		//glDrawArrays(GL_POINTS, 0, cameraVert.size());
+		glBindVertexArray(cameraVAO);
+		glPointSize(20.0f);
+		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
-		//pointsShader.use();
+		pointsShader.use();
 
-		//pointsShader.setMat4("view", view);
-		//pointsShader.setMat4("proj", projection);
+		pointsShader.setMat4("view", view);
+		pointsShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
-		//pointsShader.setMat4("model", model);
+		pointsShader.setMat4("model", model);
 
 
-		//glBindVertexArray(pointsVAO);
-		//glPointSize(2.0f);
-		//glDrawArrays(GL_POINTS, 0, pointsvert.size());
+		glBindVertexArray(pointsVAO);
+		glPointSize(2.0f);
+		glDrawArrays(GL_POINTS, 0, pointsvert.size());
 
 		/*---------------画深度贴图---------------*/
 		//depthShader.use();
@@ -378,6 +386,15 @@ int main()
 //	glBindVertexArray(0);
 //}
 
+//void mousebutton_callback(GLFWwindow* window, int button, int action, int mods)
+//{
+//	if (button == GLFW_MOUSE_BUTTON_LEFT) 
+//	{
+//
+//	}
+//
+//}
+
 
 void mouse_callback(GLFWwindow*window, double xpos, double ypos)//鼠标坐标的调用，用于控制视角
 {
@@ -423,6 +440,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 void processInput(GLFWwindow* window)
 {
+	//keybord
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	float cameraspeed = 2.5f *deltatime;
@@ -435,6 +453,23 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraposition += glm::normalize(glm::cross(camerafront, up)) * cameraspeed;
 }
+
+void processMouseButton(GLFWwindow* window,int &count,bool &changed)
+{
+	//mouse
+	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && changed)
+	{
+		count = (count + 1) % 16;
+		changed = false;
+		cout << changed << endl;
+	}
+	else if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE && !changed )
+	{
+		changed = true;
+		cout << changed << endl;
+	}
+}
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
