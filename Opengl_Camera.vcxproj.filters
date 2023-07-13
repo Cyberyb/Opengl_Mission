@@ -41,6 +41,12 @@
     <None Include="PointsMesh.frag">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="DepthShader.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="DepthShader.frag">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">

@@ -25,6 +25,8 @@
   <ItemGroup>
     <None Include="CameraMesh.frag" />
     <None Include="CameraMesh.vert" />
+    <None Include="DepthShader.frag" />
+    <None Include="DepthShader.vert" />
     <None Include="PointsMesh.frag" />
     <None Include="PointsMesh.vert" />
     <None Include="SphereMesh.frag" />

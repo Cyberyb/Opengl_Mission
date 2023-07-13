@@ -1,11 +1,10 @@
 #version 330 core
-layout(location = 9) in vec3 aPos;
+layout(location = 0) in vec3 aPos;
 
 out vec3 FragPos;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
-out mat4[16] WorldtoView;
 
 void main()
 {
