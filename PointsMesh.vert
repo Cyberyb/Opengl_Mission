@@ -8,7 +8,7 @@ uniform mat4 proj;
 
 void main()
 {
-	FragPos = vec3(model * vec4(aPos,1.0));//观察坐标下
+	FragPos = aPos;//世界坐标下
 
 	gl_Position = proj * view * model * vec4(aPos, 1.0);
 }

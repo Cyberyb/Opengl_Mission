@@ -16,5 +16,6 @@ float LinearizeDepth(float depth)
 void main()
 {             
     float depthValue = texture(depthMap, TexCoords).r;
+    //float depthValue = texture(depthMap, vec2(gl_FragCoord.x/1600,gl_FragCoord.y/1200)).r;
     FragColor = vec4(vec3(LinearizeDepth(depthValue) / far_plane), 1.0); // orthographic
 }

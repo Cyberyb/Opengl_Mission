@@ -226,25 +226,32 @@ int main()
 	//sphereShader.use();
 
 	/*---------------------------深度贴图------------------------------*/
-	//unsigned int depthMapFBO;//创建帧缓冲
-	//glGenFramebuffers(1, &depthMapFBO);
-	//// create depth texture
-	//unsigned int depthMap;//创建深度贴图
-	//glGenTextures(1, &depthMap);
-	//glBindTexture(GL_TEXTURE_2D, depthMap);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	unsigned int depthMapFBO;//创建帧缓冲
+	glGenFramebuffers(1, &depthMapFBO);
+	// create depth texture
+	unsigned int depthMap;//创建深度贴图
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	//// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
-	//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	//glDrawBuffer(GL_NONE);
-	//glReadBuffer(GL_NONE);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	/*---------------------------使用纹理创建保存位置信息------------------------------*/
+	//unsigned int pointsPosFBO;
+	//glGenBuffers(1, &pointsPosFBO);
+
+	//unsigned int posMap;
+	//glGenTextures(1, &posMap);
+	//glBindTexture(GL_TEXTURE_2D, posMap);
 
 
 
@@ -253,7 +260,7 @@ int main()
 
 	glDepthFunc(GL_LESS);
 
-	glEnable(GL_STENCIL_TEST);
+	//glEnable(GL_STENCIL_TEST);
 
 	int viewMatCount = 0;//用于16个摄像机的视角切换计数
 	//渲染循环
@@ -279,10 +286,10 @@ int main()
 
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		glClear(GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_DEPTH_BUFFER_BIT);
 
-		depthShader.use();
-		depthShader.setMat4("view", view);
+		//depthShader.use();
+		//depthShader.setMat4("view", view);
 
 
 
@@ -292,7 +299,7 @@ int main()
 
 
 
-		/*----------------画球幕-----------------*/
+		/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
 		glStencilMask(0xFF);
@@ -301,13 +308,10 @@ int main()
 
 		sphereShader.use();
 
-		//MVP Matrix
 
-		//摄像机空间
-		//glm::mat4 view = glm::mat4(1.0f);
-
-		//view = glm::lookAt(cameraposition, cameraposition + camerafront, up);//定义lookat矩阵
-
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
 	
 		sphereShader.setMat4("view", view);
 		sphereShader.setMat4("proj", projection);
@@ -315,16 +319,28 @@ int main()
 		sphereShader.setMat4("model", model);
 		sphereShader.setVec3("lightPos", lightposition);
 
-		//传光源位置
+		glBindVertexArray(VAO);
 		
+		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+		/*----------------画球幕-----------------*/
+		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
+		默认情况下设置的位掩码所有位都为1，不影响输出*/
+
+		sphereShader.use();
+
+
+		sphereShader.setMat4("view", view);
+		sphereShader.setMat4("proj", projection);
+		//模型矩阵，控制物体的旋转
+		sphereShader.setMat4("model", model);
+		sphereShader.setVec3("lightPos", lightposition);
 
 		glBindVertexArray(VAO);
 
-
-		//glPointSize(10.f);
-		//glDrawArrays(GL_POINTS, 0, vert.size());
-		
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
@@ -345,6 +361,7 @@ int main()
 		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
+		glDisable(GL_DEPTH_TEST);
 		glStencilMask(0x00);//禁用模板缓冲写入
 		glStencilFunc(GL_EQUAL, 1, 0xFF);
 
@@ -355,13 +372,14 @@ int main()
 		//模型矩阵，控制物体的旋转
 		pointsShader.setMat4("model", model);
 
-
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 		glBindVertexArray(pointsVAO);
 		glPointSize(2.0f);
 		glDrawArrays(GL_POINTS, 0, pointsvert.size());
 
 
 		glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
 
 		/*---------------画深度贴图---------------*/
 		//depthShader.use();
