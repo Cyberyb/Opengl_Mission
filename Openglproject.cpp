@@ -226,24 +226,24 @@ int main()
 	//sphereShader.use();
 
 	/*---------------------------深度贴图------------------------------*/
-	unsigned int depthMapFBO;//创建帧缓冲
-	glGenFramebuffers(1, &depthMapFBO);
-	// create depth texture
-	unsigned int depthMap;//创建深度贴图
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//unsigned int depthMapFBO;//创建帧缓冲
+	//glGenFramebuffers(1, &depthMapFBO);
+	//// create depth texture
+	//unsigned int depthMap;//创建深度贴图
+	//glGenTextures(1, &depthMap);
+	//glBindTexture(GL_TEXTURE_2D, depthMap);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
+	//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	//glDrawBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 
@@ -252,6 +252,8 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	glDepthFunc(GL_LESS);
+
+	glEnable(GL_STENCIL_TEST);
 
 	int viewMatCount = 0;//用于16个摄像机的视角切换计数
 	//渲染循环
@@ -272,17 +274,32 @@ int main()
 		//view = worldtoview[viewMatCount];
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		depthShader.use();
 		depthShader.setMat4("view", view);
 
+
+
+		glm::mat4 projection = glm::mat4(1.0f);
+		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 model = glm::mat4(1.0f);
+
+
+
 		/*----------------画球幕-----------------*/
-		//sphereShader.use();
+		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
+		默认情况下设置的位掩码所有位都为1，不影响输出*/
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		sphereShader.use();
 
 		//MVP Matrix
 
@@ -291,13 +308,10 @@ int main()
 
 		//view = glm::lookAt(cameraposition, cameraposition + camerafront, up);//定义lookat矩阵
 
-
-		glm::mat4 projection = glm::mat4(1.0f);
-		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	
 		sphereShader.setMat4("view", view);
 		sphereShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
-		glm::mat4 model = glm::mat4(1.0f);
 		sphereShader.setMat4("model", model);
 		sphereShader.setVec3("lightPos", lightposition);
 
@@ -314,7 +328,10 @@ int main()
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
-		//cameraShader.use();
+		glStencilMask(0x00);
+
+		cameraShader.use();
+
 
 		cameraShader.setMat4("view", view);
 		cameraShader.setMat4("proj", projection);
@@ -328,7 +345,10 @@ int main()
 		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
-		//pointsShader.use();
+		glStencilMask(0x00);//禁用模板缓冲写入
+		glStencilFunc(GL_EQUAL, 1, 0xFF);
+
+		pointsShader.use();
 
 		pointsShader.setMat4("view", view);
 		pointsShader.setMat4("proj", projection);
@@ -340,17 +360,20 @@ int main()
 		glPointSize(2.0f);
 		glDrawArrays(GL_POINTS, 0, pointsvert.size());
 
+
+		glStencilMask(0xFF);
+
 		/*---------------画深度贴图---------------*/
 		//depthShader.use();
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		QuardShader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderQuad();
+		//QuardShader.use();
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, depthMap);
+		//renderQuad();
 
 		//收尾阶段
 		glfwSwapBuffers(window);
@@ -464,12 +487,10 @@ void processMouseButton(GLFWwindow* window,int &count,bool &changed)
 	{
 		count = (count + 1) % 16;
 		changed = false;
-		cout << changed << endl;
 	}
 	else if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE && !changed )
 	{
 		changed = true;
-		cout << changed << endl;
 	}
 }
 
