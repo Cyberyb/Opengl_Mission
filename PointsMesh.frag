@@ -13,7 +13,7 @@ void main()
 
 	if(gl_FragCoord.z < depth && depth <0.99)
 	{
-		FragColor = vec4(0.0,0.0,1.0,1.0);
+		FragColor = vec4(FragPos,1.0);
 	}
 	else
 	{

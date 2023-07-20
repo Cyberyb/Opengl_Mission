@@ -7,7 +7,8 @@
 #include <iostream>
 #include<GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include"SOIL2/stb_image.h"
+//#include"SOIL2/stb_image.h"
+#include<SOIL2/SOIL2.h>
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -30,6 +31,9 @@ void renderQuad();
 
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
+
+const unsigned int VISI_WIDTH = 2500;
+const unsigned int VISI_HEIGHT = 50;
 
 float fov = 60.0f;
 float yaw = -90.0f;//设置偏航角
@@ -118,6 +122,11 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+	GLint maxUniformBlockSize;
+	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+	std::cout << "Max Uniform Block Size: " << maxUniformBlockSize << " bytes" << std::endl;
+
 
 
 	//创建并且编译Shader程序
@@ -243,16 +252,38 @@ int main()
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		cout << "Framebuffer complete!" << endl;
+	else
+		cout << "Framebuffer not complete! " << endl;
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	/*---------------------------使用纹理创建保存位置信息------------------------------*/
-	//unsigned int pointsPosFBO;
-	//glGenBuffers(1, &pointsPosFBO);
+	/*---------------------------创建用于保存信息的贴图------------------------------*/
+	unsigned int visiMapFBO;//创建帧缓冲
+	glGenFramebuffers(1, &visiMapFBO);
 
-	//unsigned int posMap;
-	//glGenTextures(1, &posMap);
-	//glBindTexture(GL_TEXTURE_2D, posMap);
+	unsigned int visiMap;//创建贴图
+	glGenTextures(1, &visiMap);
+	glBindTexture(GL_TEXTURE_2D, visiMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, VISI_WIDTH, VISI_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, visiMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		cout << "Framebuffer complete!" << endl;
+	else
+		cout << "Framebuffer not complete! " << endl;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 	//启用深度测试，glEnable和glDisable可以启用或者关闭opengl的某个功能
@@ -302,9 +333,9 @@ int main()
 		/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		//glStencilMask(0xFF);
+		//glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		sphereShader.use();
 
@@ -388,23 +419,46 @@ int main()
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		//QuardShader.use();
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, depthMap);
-		//renderQuad();
+		/*------------获取500*250个点的可视性情况纹理---------*/
+		glViewport(0, 0, 2500, 50);
+		glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO);
+		glClear(GL_COLOR_BUFFER_BIT);
 
+		QuardShader.use();
+		pointsShader.setMat4("view", view);
+		pointsShader.setMat4("proj", projection);
+		//模型矩阵，控制物体的旋转
+		pointsShader.setMat4("model", model);
+		//QuardShader.setInt("floors",);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		renderQuad();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		//收尾阶段
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 	}
+	std::vector<unsigned char> pixels(2500 * 50 * 4);
+	glBindTexture(GL_TEXTURE_2D, visiMap);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+	//unsigned char* PixelsUChar = new unsigned char[2500 * 50 * 4];
+	//for (size_t i = 0; i < pixels.size(); ++i) {
+	//	PixelsUChar[i] = pixels[i] * 255;
+	//}
+	
+	SOIL_save_image("output_texture.png", SOIL_SAVE_TYPE_PNG, 2500,50, 4, pixels.data());
+
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &cameraVAO);
-	//glDeleteVertexArrays(1, &pointsVAO);
 	glDeleteBuffers(1, &VBO[0]);
 	glDeleteBuffers(1, &VBO[1]);
 	glDeleteBuffers(1, &VBO[2]);
 	glDeleteBuffers(1, &EBO);
+	glDeleteFramebuffers(1, &depthMapFBO);
 
 	glfwTerminate();
 	return 0;
