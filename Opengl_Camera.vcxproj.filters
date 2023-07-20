@@ -70,6 +70,9 @@
     <ClInclude Include="PointsMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="OutputData.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="mesh.txt">

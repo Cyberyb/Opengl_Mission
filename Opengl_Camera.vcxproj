@@ -37,6 +37,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraMesh.h" />
+    <ClInclude Include="OutputData.h" />
     <ClInclude Include="PointsMesh.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SphereMesh.h" />

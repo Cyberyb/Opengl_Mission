@@ -34,14 +34,21 @@ void main()
     float wy = gl_FragCoord.y * 0.11 + (-2.75);
     vec3 worldpos = vec3(wx,wy,wz);//根据贴图位置计算每个点的世界坐标
     vec4 pos = proj * view * model * vec4(worldpos,1.0);
-    float u = pos.x/pos.w;
-    float v = pos.y/pos.w;
-    float depthValue = texture(depthMap, vec2(u,v)).r;
-    float pointdepth = (pos.z / pos.w)*0.5+0.5;
+    pos.xyz /= pos.w;
 
-    if(pointdepth < depthValue && depthValue < 0.99 && pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
-        FragColor = vec4(1.0,0.0,0.0,1.0);
+    float u = (pos.x) * 0.5 + 0.5;
+    float v = (pos.y) * 0.5 + 0.5;
+    float depthValue = texture(depthMap, vec2(u,v)).r;
+    float pointdepth = (pos.z)*0.5+0.5;
+
+    //if(pointdepth < depthValue && depthValue < 0.99 && pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
+        //FragColor = vec4(1.0,0.0,0.0,1.0);
+    //else
+        //FragColor = vec4(0.0,0.0,0.0,0.0);
+
+    if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
     else
-        FragColor = vec4(0.0,0.5,0.5,1.0);
+        FragColor = vec4(1.0,0.0,0.0,1.0);
 
 }

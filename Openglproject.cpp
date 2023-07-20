@@ -16,6 +16,7 @@
 #include "SphereMesh.h"
 #include "CameraMesh.h"
 #include "PointsMesh.h"
+#include "OutputData.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -91,6 +92,16 @@ void GetDirRightUp(glm::vec3 r,glm::vec3 &dir,glm::vec3 &right,glm::vec3 &up)
 	dir = glm::vec3(glm::vec4(0.0,0.0,1.0,0.0) * res);
 	right = glm::vec3(glm::vec4(1.0, 0.0, 0.0, 0.0) * res);
 	up = glm::cross(dir, right);
+}
+
+glm::mat4 GetFrustumbyangle(float left, float right, float bottom, float top,float near, float far)
+{
+	const float PI = 3.1415;
+	float leftC = -near * std::tan(left * PI / 180.0);
+	float rightC = near * std::tan(right * PI / 180.0);
+	float topC = near * std::tan(top * PI / 180.0);
+	float bottomC = -near * std::tan(bottom * PI / 180.0);
+	return glm::frustum(leftC, rightC, bottomC, topC,near,far);
 }
 
 //glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
@@ -182,23 +193,24 @@ int main()
 
 
 	//提前计算16个点的变换矩阵
-	vector<glm::mat4> worldtoview;
-	for (int k = 0; k < cameraVert.size(); k++) {
-		glm::vec3 r = camerarot[k];
-		glm::vec3 camera = camerapos[k];
-		glm::mat4 worldToView = viewMatrix(-camera, r);
-		worldtoview.push_back(worldToView);
-	}
-	cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
+	//vector<glm::mat4> worldtoview;
+	//for (int k = 0; k < cameraVert.size(); k++) {
+	//	glm::vec3 r = camerarot[k];
+	//	glm::vec3 camera = camerapos[k];
+	//	glm::mat4 worldToView = viewMatrix(-camera, r);
+	//	worldtoview.push_back(worldToView);
+	//}
+	//cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
 
-	glm::mat4 cameraSpaceMat = worldtoview[0];
+	//glm::mat4 cameraSpaceMat = worldtoview[0];
 	//Test
 	//pointsShader.use();
 	//glUniformMatrix4fv(glGetUniformLocation(pointsShader.ID, "cameraSpaceMat"), 16, GL_FALSE, &worldtoview[0][0][0]);
 
 	depthShader.use();
 	//glUniformMatrix4fv(glGetUniformLocation(depthShader.ID, "cameraSpaceMat"), 1, GL_FALSE, &cameraSpaceMat[0][0]);
-	depthShader.setMat4("perspective", glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f));
+	glm::mat4 fru = GetFrustumbyangle(camerafru[0].x, camerafru[0].y, camerafru[0].w, camerafru[0].z, 0.1f, 100.0f);
+	depthShader.setMat4("perspective", fru);
 	depthShader.setMat4("model", glm::mat4(1.0f));
 	//depthShader.setMat4("cameraSpaceMat", glm::lookAt(cameraposition, cameraposition + camerafront, up));
 	glm::vec3 dir, right, up;
@@ -345,9 +357,9 @@ int main()
 		//depthShader.setMat4("view", view);
 
 
-
-		glm::mat4 projection = glm::mat4(1.0f);
-		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 projection = fru;
+		//glm::mat4 projection = glm::mat4(1.0f);
+		//projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 model = glm::mat4(1.0f);
 
 
@@ -485,21 +497,24 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, visiMap);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	
-	int err = SOIL_save_image("Points_visiable.png", SOIL_SAVE_TYPE_PNG, 2500,50, SOIL_LOAD_RGBA, pixels.data());
-	if (err)
-		cout << "Done" << endl;
-	else
-		cout << "Failed" << endl;
+	//输出PNG格式图像
+	//int err = SOIL_save_image("Points_visiable.png", SOIL_SAVE_TYPE_PNG, 2500,50, SOIL_LOAD_RGBA, pixels.data());
+	//if (err)
+	//	cout << "Done" << endl;
+	//else
+	//	cout << "Failed" << endl;
 
-	std::vector<unsigned char> Depthpixels(SCR_WIDTH * SCR_HEIGHT);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, Depthpixels.data());
+	savePixelsToTxt(pixels, "macthPoints.txt");
 
-	int err_d = SOIL_save_image("Depth.png", SOIL_SAVE_TYPE_PNG, SCR_WIDTH ,SCR_HEIGHT, 1, Depthpixels.data());
-	if (err_d)
-		cout << "Done" << endl;
-	else
-		cout << "Failed" << endl;
+	//std::vector<unsigned char> Depthpixels(SCR_WIDTH * SCR_HEIGHT);
+	//glBindTexture(GL_TEXTURE_2D, depthMap);
+	//glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, Depthpixels.data());
+
+	//int err_d = SOIL_save_image("Depth.png", SOIL_SAVE_TYPE_PNG, SCR_WIDTH ,SCR_HEIGHT, 1, Depthpixels.data());
+	//if (err_d)
+	//	cout << "Done" << endl;
+	//else
+	//	cout << "Failed" << endl;
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &cameraVAO);
