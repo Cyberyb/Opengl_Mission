@@ -9,6 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 //#include"SOIL2/stb_image.h"
 #include<SOIL2/SOIL2.h>
+#include<SOIL2/stb_image_write.h>
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -93,6 +94,25 @@ void GetDirRightUp(glm::vec3 r,glm::vec3 &dir,glm::vec3 &right,glm::vec3 &up)
 }
 
 //glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+#define ASSERT(x) if((!x)) __debugbreak();
+#define GLCall(x) GLClearError();\
+        x;\
+        ASSERT(GLLogCall(#x,__FILE__,__LINE__))
+
+void GLClearError()
+{
+	while (glGetError() != GL_NO_ERROR);
+}
+bool GLLogCall(const char* function, const char* file, int line)
+{
+	while (GLenum err = glGetError())
+	{
+		std::cout << "[OpenGL Error] " << err <<
+			file << " " << function << " : " << line << std::endl;
+		return false;
+	}
+	return true;
+}
 
 
 int main()
@@ -104,7 +124,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//创建窗口
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Texture", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(VISI_WIDTH, VISI_HEIGHT, "Texture", NULL, NULL);
 
 	//连接上下文
 	glfwMakeContextCurrent(window);
@@ -250,8 +270,8 @@ int main()
 	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
+	//glDrawBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 		cout << "Framebuffer complete!" << endl;
@@ -275,8 +295,8 @@ int main()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, visiMap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
+	//glDrawBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 		cout << "Framebuffer complete!" << endl;
@@ -290,6 +310,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	glDepthFunc(GL_LESS);
+
 
 	//glEnable(GL_STENCIL_TEST);
 
@@ -315,6 +336,7 @@ int main()
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+		glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		//glClear(GL_DEPTH_BUFFER_BIT);
@@ -355,62 +377,63 @@ int main()
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
 
 
 		/*----------------画球幕-----------------*/
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
 
-		sphereShader.use();
+		//sphereShader.use();
 
 
-		sphereShader.setMat4("view", view);
-		sphereShader.setMat4("proj", projection);
-		//模型矩阵，控制物体的旋转
-		sphereShader.setMat4("model", model);
-		sphereShader.setVec3("lightPos", lightposition);
+		//sphereShader.setMat4("view", view);
+		//sphereShader.setMat4("proj", projection);
+		////模型矩阵，控制物体的旋转
+		//sphereShader.setMat4("model", model);
+		//sphereShader.setVec3("lightPos", lightposition);
 
-		glBindVertexArray(VAO);
+		//glBindVertexArray(VAO);
 
-		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+		//glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
-		glStencilMask(0x00);
+		//glStencilMask(0x00);
 
-		cameraShader.use();
-
-
-		cameraShader.setMat4("view", view);
-		cameraShader.setMat4("proj", projection);
-		//模型矩阵，控制物体的旋转
-		//glm::mat4 model_c = glm::mat4(1.0f);
-		cameraShader.setMat4("model", model);
+		//cameraShader.use();
 
 
-		glBindVertexArray(cameraVAO);
-		glPointSize(20.0f);
-		glDrawArrays(GL_POINTS, 0, cameraVert.size());
+		//cameraShader.setMat4("view", view);
+		//cameraShader.setMat4("proj", projection);
+		////模型矩阵，控制物体的旋转
+		////glm::mat4 model_c = glm::mat4(1.0f);
+		//cameraShader.setMat4("model", model);
+
+
+		//glBindVertexArray(cameraVAO);
+		//glPointSize(20.0f);
+		//glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
-		glDisable(GL_DEPTH_TEST);
-		glStencilMask(0x00);//禁用模板缓冲写入
-		glStencilFunc(GL_EQUAL, 1, 0xFF);
+		//glDisable(GL_DEPTH_TEST);
+		//glStencilMask(0x00);//禁用模板缓冲写入
+		//glStencilFunc(GL_EQUAL, 1, 0xFF);
 
-		pointsShader.use();
+		//pointsShader.use();
 
-		pointsShader.setMat4("view", view);
-		pointsShader.setMat4("proj", projection);
-		//模型矩阵，控制物体的旋转
-		pointsShader.setMat4("model", model);
+		//pointsShader.setMat4("view", view);
+		//pointsShader.setMat4("proj", projection);
+		////模型矩阵，控制物体的旋转
+		//pointsShader.setMat4("model", model);
 
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		glBindVertexArray(pointsVAO);
-		glPointSize(2.0f);
-		glDrawArrays(GL_POINTS, 0, pointsvert.size());
+		//glBindTexture(GL_TEXTURE_2D, depthMap);
+		//glBindVertexArray(pointsVAO);
+		//glPointSize(2.0f);
+		//glDrawArrays(GL_POINTS, 0, pointsvert.size());
 
 
-		glStencilMask(0xFF);
-		glEnable(GL_DEPTH_TEST);
+		//glStencilMask(0xFF);
+		//glEnable(GL_DEPTH_TEST);
 
 		/*---------------画深度贴图---------------*/
 		//depthShader.use();
@@ -425,18 +448,35 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		QuardShader.use();
-		pointsShader.setMat4("view", view);
-		pointsShader.setMat4("proj", projection);
+		QuardShader.setMat4("view", view);
+		QuardShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
-		pointsShader.setMat4("model", model);
+		QuardShader.setMat4("model", model);
+		QuardShader.setInt("row", 50);
+		QuardShader.setInt("col", 50);
+		QuardShader.setInt("hei", 50);
 		//QuardShader.setInt("floors",);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		renderQuad();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		//收尾阶段
+		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+
+		/*-----------显示2500 * 50点的情况-------------*/
+
+
+	    depthShader.use();
+		//QuardShader.setInt("floors",);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, visiMap);
+		renderQuad();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+				//收尾阶段
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
@@ -444,13 +484,22 @@ int main()
 	std::vector<unsigned char> pixels(2500 * 50 * 4);
 	glBindTexture(GL_TEXTURE_2D, visiMap);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-	//unsigned char* PixelsUChar = new unsigned char[2500 * 50 * 4];
-	//for (size_t i = 0; i < pixels.size(); ++i) {
-	//	PixelsUChar[i] = pixels[i] * 255;
-	//}
 	
-	SOIL_save_image("output_texture.png", SOIL_SAVE_TYPE_PNG, 2500,50, 4, pixels.data());
+	int err = SOIL_save_image("Points_visiable.png", SOIL_SAVE_TYPE_PNG, 2500,50, SOIL_LOAD_RGBA, pixels.data());
+	if (err)
+		cout << "Done" << endl;
+	else
+		cout << "Failed" << endl;
+
+	std::vector<unsigned char> Depthpixels(SCR_WIDTH * SCR_HEIGHT);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, Depthpixels.data());
+
+	int err_d = SOIL_save_image("Depth.png", SOIL_SAVE_TYPE_PNG, SCR_WIDTH ,SCR_HEIGHT, 1, Depthpixels.data());
+	if (err_d)
+		cout << "Done" << endl;
+	else
+		cout << "Failed" << endl;
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &cameraVAO);
