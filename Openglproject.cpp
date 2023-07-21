@@ -272,30 +272,45 @@ int main()
 	//sphereShader.use();
 
 	/*---------------------------深度贴图------------------------------*/
-	unsigned int depthMapFBO;//创建帧缓冲
-	glGenFramebuffers(1, &depthMapFBO);
+	unsigned int depthMapFBO[16];//创建帧缓冲
+	for (int fboC = 0; fboC < 16; fboC++)
+	{
+		glGenFramebuffers(1, &depthMapFBO[fboC]);
+	}
+	
 	// create depth texture
-	unsigned int depthMap;//创建深度贴图
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	unsigned int depthMap[16];//创建深度贴图
+	for (int dmpC = 0; dmpC < 16; dmpC++)
+	{
+		glGenTextures(1, &depthMap[dmpC]);
+		glBindTexture(GL_TEXTURE_2D, depthMap[dmpC]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[dmpC]);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[dmpC], 0);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+			cout << "Framebuffer complete!" << endl;
+		else
+			cout << "Framebuffer not complete! " << endl;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+
 
 	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	
+
 	//glDrawBuffer(GL_NONE);
 	//glReadBuffer(GL_NONE);
 
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-		cout << "Framebuffer complete!" << endl;
-	else
-		cout << "Framebuffer not complete! " << endl;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	/*---------------------------创建用于保存信息的贴图------------------------------*/
 	unsigned int visiMapFBO;//创建帧缓冲
@@ -343,7 +358,7 @@ int main()
 		lasttime = currenttime;
 
 		processInput(window);
-		processMouseButton(window, viewMatCount, mouseButtonChanged);
+		//processMouseButton(window, viewMatCount, mouseButtonChanged);
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -369,26 +384,32 @@ int main()
 		//glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
+
 		sphereShader.use();
+		sphereShader.setMat4("model", model);
+		sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
+		for (int i = 0; i < 16; i++)
+		{
+			sphereShader.setInt("count", i);
+			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
+			glClear(GL_DEPTH_BUFFER_BIT);
 
+			glBindVertexArray(VAO);
 
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		glClear(GL_DEPTH_BUFFER_BIT);
+			glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
+		}
+
 	
 		//sphereShader.setMat4("view", view);
 		//sphereShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
-		sphereShader.setInt("count", viewMatCount);
-		sphereShader.setMat4("model", model);
-		sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
 
-		glBindVertexArray(VAO);
-		
-		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
+
 
 
 		/*----------------画球幕-----------------*/
@@ -468,8 +489,16 @@ int main()
 		QuardShader.setInt("col", 50);
 		QuardShader.setInt("hei", 50);
 		//QuardShader.setInt("floors",);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
+		GLint texIndex[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+		glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16,texIndex);
+		
+		for (int i = 0; i < 16; i++)
+		{
+			
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+		}
+		
 		renderQuad();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -522,7 +551,8 @@ int main()
 	glDeleteBuffers(1, &VBO[1]);
 	glDeleteBuffers(1, &VBO[2]);
 	glDeleteBuffers(1, &EBO);
-	glDeleteFramebuffers(1, &depthMapFBO);
+	for(int i = 0;i<16;i++)
+		glDeleteFramebuffers(1, &depthMapFBO[i]);
 
 	glfwTerminate();
 	return 0;

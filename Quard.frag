@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D depthMap;
+uniform sampler2D depthMap[16];
 uniform int floors;
 
 uniform mat4 model;
@@ -37,22 +37,53 @@ void main()
     //float depthValue = texture(depthMap, vec2(gl_FragCoord.x/1600,gl_FragCoord.y/1200)).r;
     //FragColor = vec4(vec3(LinearizeDepth(depthValue) / far_plane), 1.0); // orthographic
 
+    int flag = 0;//用于计数，每记一个表示没有被当前摄像机所看到，计满16个后表示没有被任何摄像机看到，满足输出条件
 
     float wx = mod(gl_FragCoord.x,col) * 0.11 + (-2.75);
     float wz = floor(gl_FragCoord.x/row) * 0.11 + (-2.75);
     float wy = gl_FragCoord.y * 0.11 + (-2.75);
     vec3 worldpos = vec3(wx,wy,wz);//根据贴图位置计算每个点的世界坐标
-    vec4 pos = proj[count] * view[count] * model * vec4(worldpos,1.0);
-    pos.xyz /= pos.w;
 
-    float u = (pos.x) * 0.5 + 0.5;
-    float v = (pos.y) * 0.5 + 0.5;
-    float depthValue = texture(depthMap, vec2(u,v)).r;
-    float pointdepth = (pos.z)*0.5+0.5;
+    for(int i = 0; i < 16; i++)
+    {
+        vec4 pos = proj[i] * view[i] * model * vec4(worldpos,1.0);//获取每个摄像机视野内点的裁剪视图
+        pos.xyz /= pos.w;//做透视除法
 
-    if(pointdepth < depthValue && depthValue < 0.99 && pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
+        //计算UV用于采样深度图
+        float u = (pos.x) * 0.5 + 0.5;
+        float v = (pos.y) * 0.5 + 0.5;
+        float depthValue = texture(depthMap[i], vec2(u,v)).r;
+
+        //计算当前点的深度
+        float pointdepth = (pos.z)*0.5+0.5;
+
+        
+
+        //
+        if(pointdepth > depthValue && InSight(pos))
+        {
+            FragColor = vec4(0.0,0.0,0.0,0.0);
+            break;
+        }
+
+        //判断是否在视野内
+        if(!InSight(pos))
+            flag+=1;
+        else if(InSight(pos) && depthValue == 1.0)
+            flag+=1;
+    }
+
+
+    
+
+
+    if(flag == 16)
         FragColor = vec4(1.0,0.0,0.0,1.0);
     else
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+
+        //球外完全剔除，按照半径
+    if(length(worldpos)>2.75)
         FragColor = vec4(0.0,0.0,0.0,0.0);
 
     //if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
