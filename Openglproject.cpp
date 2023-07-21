@@ -101,6 +101,7 @@ glm::mat4 GetFrustumbyangle(float left, float right, float bottom, float top,flo
 	float rightC = near * std::tan(right * PI / 180.0);
 	float topC = near * std::tan(top * PI / 180.0);
 	float bottomC = -near * std::tan(bottom * PI / 180.0);
+	//frustum需要通过near来计算参数
 	return glm::frustum(leftC, rightC, bottomC, topC,near,far);
 }
 
@@ -184,39 +185,43 @@ int main()
 
 
 	//输出测试
-	std::cout << vert.size() << " " << sizeof(vert) << " " << sizeof(vert[0]) << std::endl;
-	std::cout << index.size() << " " << sizeof(index) << " " << sizeof(index[0]) << std::endl;
 
 	//16:摄像机个数 vector的当前容量 16:vector的size?   12:vec3  3*4
 	std::cout << camerapos.size() << " " << sizeof(camerapos) << " " << sizeof(camerapos[0]) << std::endl;
 	std::cout << cameraVert.data()->camerafru.x << endl;
 
 
-	//提前计算16个点的变换矩阵
-	//vector<glm::mat4> worldtoview;
-	//for (int k = 0; k < cameraVert.size(); k++) {
-	//	glm::vec3 r = camerarot[k];
-	//	glm::vec3 camera = camerapos[k];
-	//	glm::mat4 worldToView = viewMatrix(-camera, r);
-	//	worldtoview.push_back(worldToView);
-	//}
-	//cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
+	//提前计算16个摄像机的变换矩阵
+	vector<glm::mat4> worldtoview;
+	for (int k = 0; k < cameraVert.size(); k++) {
+		glm::vec3 r = camerarot[k];
+		glm::vec3 camera = camerapos[k];
 
-	//glm::mat4 cameraSpaceMat = worldtoview[0];
-	//Test
-	//pointsShader.use();
-	//glUniformMatrix4fv(glGetUniformLocation(pointsShader.ID, "cameraSpaceMat"), 16, GL_FALSE, &worldtoview[0][0][0]);
+		//方法一：使用自定义的viewMatrix函数（有问题，生成的View矩阵第一三行符号相反）
+		//glm::mat4 worldToView = viewMatrix(-camera, r);
 
-	depthShader.use();
-	//glUniformMatrix4fv(glGetUniformLocation(depthShader.ID, "cameraSpaceMat"), 1, GL_FALSE, &cameraSpaceMat[0][0]);
-	glm::mat4 fru = GetFrustumbyangle(camerafru[0].x, camerafru[0].y, camerafru[0].w, camerafru[0].z, 0.1f, 100.0f);
-	depthShader.setMat4("perspective", fru);
-	depthShader.setMat4("model", glm::mat4(1.0f));
-	//depthShader.setMat4("cameraSpaceMat", glm::lookAt(cameraposition, cameraposition + camerafront, up));
-	glm::vec3 dir, right, up;
-	GetDirRightUp(camerarot[0], dir, right, up);
-	glm::mat4 view = glm::lookAt(camerapos[0], camerapos[0] + dir, up);
-	depthShader.setMat4("cameraSpaceMat", glm::lookAt(camerapos[0], camerapos[0] + dir, up));
+		//方法二：计算lookAt矩阵（正确的，中肯的）
+		glm::vec3 dir, right, up;
+		GetDirRightUp(camerarot[k], dir, right, up);
+		glm::mat4 worldToView = glm::lookAt(camerapos[k], camerapos[k] + dir, up);
+		worldtoview.push_back(worldToView);
+	}
+	cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
+
+	//提前计算16个摄像机的Frustum
+	vector<glm::mat4> allfrustum;
+	for (int j = 0; j < cameraVert.size(); j++) {
+		glm::mat4 fru = GetFrustumbyangle(camerafru[j].x, camerafru[j].y, camerafru[j].w, camerafru[j].z, 0.1f, 100.0f);
+		allfrustum.push_back(fru);
+	}
+
+	//glm::mat4 fru = GetFrustumbyangle(camerafru[0].x, camerafru[0].y, camerafru[0].w, camerafru[0].z, 0.1f, 100.0f);
+	QuardShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(QuardShader.ID, "view"), 16, GL_FALSE, &worldtoview[0][0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(QuardShader.ID, "proj"), 16, GL_FALSE, &allfrustum[0][0][0]);
+	sphereShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "view"), 16, GL_FALSE, &worldtoview[0][0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "proj"), 16, GL_FALSE, &allfrustum[0][0][0]);
 
 	/*球幕Mesh*/
 	unsigned int VBO[3], VAO, EBO;//创建顶点缓冲对象、顶点数组对象
@@ -339,10 +344,7 @@ int main()
 
 		processInput(window);
 		processMouseButton(window, viewMatCount, mouseButtonChanged);
-		//更新view矩阵
-		GetDirRightUp(camerarot[viewMatCount], dir, right, up);
-		view = glm::lookAt(camerapos[viewMatCount], camerapos[viewMatCount] + dir, up);
-		//view = worldtoview[viewMatCount];
+
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -353,11 +355,7 @@ int main()
 		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		//glClear(GL_DEPTH_BUFFER_BIT);
 
-		//depthShader.use();
-		//depthShader.setMat4("view", view);
-
-
-		glm::mat4 projection = fru;
+		
 		//glm::mat4 projection = glm::mat4(1.0f);
 		//projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 model = glm::mat4(1.0f);
@@ -378,11 +376,12 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 	
-		sphereShader.setMat4("view", view);
-		sphereShader.setMat4("proj", projection);
+		//sphereShader.setMat4("view", view);
+		//sphereShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
+		sphereShader.setInt("count", viewMatCount);
 		sphereShader.setMat4("model", model);
-		sphereShader.setVec3("lightPos", lightposition);
+		sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
 
 		glBindVertexArray(VAO);
 		
@@ -460,8 +459,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		QuardShader.use();
-		QuardShader.setMat4("view", view);
-		QuardShader.setMat4("proj", projection);
+		QuardShader.setInt("count", viewMatCount);//传递摄像机计数
+		//QuardShader.setMat4("view", view);
+		//QuardShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
 		QuardShader.setMat4("model", model);
 		QuardShader.setInt("row", 50);

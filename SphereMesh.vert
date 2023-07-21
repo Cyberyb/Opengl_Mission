@@ -6,9 +6,10 @@ layout(location = 2) in vec2 aTexCoord;
 out vec2 TexCoord;
 out vec3 Normal;
 out vec3 FragPos;
+uniform int count;
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+uniform mat4 view[16];
+uniform mat4 proj[16];
 void main()
 {
 	
@@ -16,5 +17,5 @@ void main()
 	FragPos = vec3(model * vec4(aPos,1.0));//¹Û²ì×ø±êÏÂ
 	//TexCoord = vec2(aTexCoord.x, aTexCoord.y);
 
-	gl_Position = proj * view * model * vec4(aPos, 1.0);
+	gl_Position = proj[count] * view[count] * model * vec4(aPos, 1.0);
 }
