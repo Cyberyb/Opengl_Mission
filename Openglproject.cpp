@@ -37,6 +37,13 @@ const unsigned int SCR_HEIGHT = 1200;
 const unsigned int VISI_WIDTH = 2500;
 const unsigned int VISI_HEIGHT = 50;
 
+const int POI_X = 256;
+const int POI_Y = 256;
+const int POI_Z = 256;
+
+const unsigned int POI_WIDTH = 50;
+const unsigned int POI_HEIGHT = 50;
+
 float fov = 60.0f;
 float yaw = -90.0f;//设置偏航角
 float pitch = 0.0f;//设置俯仰角
@@ -136,7 +143,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//创建窗口
-	GLFWwindow* window = glfwCreateWindow(VISI_WIDTH, VISI_HEIGHT, "Texture", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(500, 500, "Missing Points", NULL, NULL);
 
 	//连接上下文
 	glfwMakeContextCurrent(window);
@@ -147,7 +154,7 @@ int main()
 	glfwSetScrollCallback(window, scroll_callback);
 
 	//设置捕捉光标
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	//初始化glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -206,7 +213,6 @@ int main()
 		glm::mat4 worldToView = glm::lookAt(camerapos[k], camerapos[k] + dir, up);
 		worldtoview.push_back(worldToView);
 	}
-	cout << worldtoview[0][0].x << worldtoview[0][0].y<< worldtoview[0][0].z << worldtoview[0][0].w <<endl;
 
 	//提前计算16个摄像机的Frustum
 	vector<glm::mat4> allfrustum;
@@ -313,20 +319,27 @@ int main()
 
 
 	/*---------------------------创建用于保存信息的贴图------------------------------*/
-	unsigned int visiMapFBO;//创建帧缓冲
-	glGenFramebuffers(1, &visiMapFBO);
+	//unsigned int visiMapFBO[POI_Y];//创建帧缓冲
+	unsigned int *visiMapFBO = new unsigned int[POI_Y];
+	glGenFramebuffers(POI_Y, visiMapFBO);
 
-	unsigned int visiMap;//创建贴图
-	glGenTextures(1, &visiMap);
-	glBindTexture(GL_TEXTURE_2D, visiMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, VISI_WIDTH, VISI_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	unsigned int *visiMap = new unsigned int[POI_Y];//创建贴图
+	glGenTextures(POI_Y, visiMap);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, visiMap, 0);
+	for (int vmpC = 0; vmpC < POI_Y; vmpC++)
+	{
+		glBindTexture(GL_TEXTURE_2D, visiMap[vmpC]);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, POI_X, POI_Z, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[vmpC]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, visiMap[vmpC], 0);
+	}
+
 	//glDrawBuffer(GL_NONE);
 	//glReadBuffer(GL_NONE);
 
@@ -346,10 +359,9 @@ int main()
 
 	//glEnable(GL_STENCIL_TEST);
 
-	int viewMatCount = 0;//用于16个摄像机的视角切换计数
+	int viewMatCount = 0;//用于16个摄像机的视角切换计数  |   用于不同layer的切换
 	//渲染循环
 	bool mouseButtonChanged = true;
-
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -358,14 +370,14 @@ int main()
 		lasttime = currenttime;
 
 		processInput(window);
-		//processMouseButton(window, viewMatCount, mouseButtonChanged);
+		processMouseButton(window, viewMatCount, mouseButtonChanged);
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
+		glViewport(0, 0, 500, 500);
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		//glClear(GL_DEPTH_BUFFER_BIT);
@@ -400,7 +412,7 @@ int main()
 			glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glViewport(0, 0, VISI_WIDTH, VISI_HEIGHT);
+			glViewport(0, 0, 500, 500);
 		}
 
 	
@@ -474,9 +486,9 @@ int main()
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		/*------------获取500*250个点的可视性情况纹理---------*/
-		glViewport(0, 0, 2500, 50);
-		glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO);
+		/*------------获取100*100个点的可视性情况纹理，共计100层---------*/
+		glViewport(0, 0, POI_X, POI_Z);
+
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		QuardShader.use();
@@ -485,9 +497,9 @@ int main()
 		//QuardShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
 		QuardShader.setMat4("model", model);
-		QuardShader.setInt("row", 50);
-		QuardShader.setInt("col", 50);
-		QuardShader.setInt("hei", 50);
+		QuardShader.setInt("row", POI_X);
+		QuardShader.setInt("col", POI_Z);
+		QuardShader.setInt("hei", POI_Y);
 		//QuardShader.setInt("floors",);
 		GLint texIndex[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 		glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16,texIndex);
@@ -498,20 +510,28 @@ int main()
 			glActiveTexture(GL_TEXTURE0 + i);
 			glBindTexture(GL_TEXTURE_2D, depthMap[i]);
 		}
-		
-		renderQuad();
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//逐层渲染
+		for (int layer = 0; layer < POI_Y; layer++)
+		{
+			QuardShader.setInt("layer", layer);
+			glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[layer]);
+			glClear(GL_COLOR_BUFFER_BIT);
+			renderQuad();
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glViewport(0, 0, POI_X, POI_Z);
+		}
+
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 
-		/*-----------显示2500 * 50点的情况-------------*/
+		/*-----------显示一层POI_X * POI_Z点的情况-------------*/
 
-
+		glViewport(0, 0,500, 500);
 	    depthShader.use();
 		//QuardShader.setInt("floors",);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, visiMap);
+		glBindTexture(GL_TEXTURE_2D, visiMap[viewMatCount]);
 		renderQuad();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -520,11 +540,8 @@ int main()
 				//收尾阶段
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-
 	}
-	std::vector<unsigned char> pixels(2500 * 50 * 4);
-	glBindTexture(GL_TEXTURE_2D, visiMap);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
 	
 	//输出PNG格式图像
 	//int err = SOIL_save_image("Points_visiable.png", SOIL_SAVE_TYPE_PNG, 2500,50, SOIL_LOAD_RGBA, pixels.data());
@@ -533,7 +550,25 @@ int main()
 	//else
 	//	cout << "Failed" << endl;
 
-	savePixelsToTxt(pixels, "macthPoints.txt");
+
+
+
+
+	/*--------------输出模块---------------*/
+	setOutputFormat(POI_X, POI_Z, POI_Y);
+	int textureWidth;
+	for (int layer = 0; layer < POI_Y; layer++)
+	{
+		std::vector<unsigned char> pixels(POI_X* POI_Z*4);
+		glBindTexture(GL_TEXTURE_2D, visiMap[layer]);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &textureWidth);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
+
+		
+		savePixelsToTxt(pixels, "macthPoints.txt", layer);
+	}
+
+	
 
 	//std::vector<unsigned char> Depthpixels(SCR_WIDTH * SCR_HEIGHT);
 	//glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -651,7 +686,7 @@ void processMouseButton(GLFWwindow* window,int &count,bool &changed)
 	//mouse
 	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && changed)
 	{
-		count = (count + 1) % 16;
+		count = (count + 1) % POI_Y;
 		changed = false;
 	}
 	else if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE && !changed )

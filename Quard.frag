@@ -10,6 +10,7 @@ uniform mat4 model;
 uniform mat4 view[16];
 uniform mat4 proj[16];
 uniform int count;
+uniform int layer;
 
 uniform int row;
 uniform int col;
@@ -18,7 +19,7 @@ uniform int hei;
 float near_plane = 0.1;
 float far_plane = 3.0;
 
-bool InSight(vec4 pos)
+bool InSight(vec4 pos)//判断点是否在视野内
 {
     if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
         return true;
@@ -26,22 +27,17 @@ bool InSight(vec4 pos)
         return false;
 }
 
-float LinearizeDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0; // Back to NDC 
-    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));	
-}
 
 void main()
 {             
-    //float depthValue = texture(depthMap, vec2(gl_FragCoord.x/1600,gl_FragCoord.y/1200)).r;
-    //FragColor = vec4(vec3(LinearizeDepth(depthValue) / far_plane), 1.0); // orthographic
-
     int flag = 0;//用于计数，每记一个表示没有被当前摄像机所看到，计满16个后表示没有被任何摄像机看到，满足输出条件
 
-    float wx = mod(gl_FragCoord.x,col) * 0.11 + (-2.75);
-    float wz = floor(gl_FragCoord.x/row) * 0.11 + (-2.75);
-    float wy = gl_FragCoord.y * 0.11 + (-2.75);
+    //float wx = mod(gl_FragCoord.x,col) * (5.5/row) + (-2.75);
+    //float wz = floor(gl_FragCoord.x/row) * (5.5/col) + (-2.75);
+    //float wy = gl_FragCoord.y * 0.11 + (-2.75);
+    float wx = gl_FragCoord.x *(5.5/row) + (-2.75);
+    float wz = gl_FragCoord.y * (5.5/col) + (-2.75);
+    float wy = layer * (5.5/hei) + (-2.75);//根据当前层数计算y值
     vec3 worldpos = vec3(wx,wy,wz);//根据贴图位置计算每个点的世界坐标
 
     for(int i = 0; i < 16; i++)
@@ -78,7 +74,7 @@ void main()
 
 
     if(flag == 16)
-        FragColor = vec4(1.0,0.0,0.0,1.0);
+        FragColor = vec4(1.0,1.0,1.0,1.0);
     else
         FragColor = vec4(0.0,0.0,0.0,0.0);
 
