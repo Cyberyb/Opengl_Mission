@@ -19,33 +19,35 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="glad.c" />
-    <ClCompile Include="Openglproject.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="CameraMesh.frag" />
-    <None Include="CameraMesh.vert" />
-    <None Include="DepthShader.frag" />
-    <None Include="DepthShader.vert" />
-    <None Include="PointsMesh.frag" />
-    <None Include="PointsMesh.vert" />
-    <None Include="Quard.frag" />
-    <None Include="Quard.vert" />
-    <None Include="SphereMesh.frag" />
-    <None Include="SphereMesh.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="CameraMesh.h" />
-    <ClInclude Include="OutputData.h" />
-    <ClInclude Include="PointsMesh.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="SphereMesh.h" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="Box.txt" />
+    <Text Include="CMakeLists.txt" />
     <Text Include="light.txt" />
     <Text Include="mesh.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\CameraMesh.h" />
+    <ClInclude Include="src\OutputData.h" />
+    <ClInclude Include="src\PointsMesh.h" />
+    <ClInclude Include="src\Shader.h" />
+    <ClInclude Include="src\SphereMesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\Openglproject.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="shader\CameraMesh.frag" />
+    <None Include="shader\CameraMesh.vert" />
+    <None Include="shader\DepthShader.frag" />
+    <None Include="shader\DepthShader.vert" />
+    <None Include="shader\PointsMesh.frag" />
+    <None Include="shader\PointsMesh.vert" />
+    <None Include="shader\Quard.frag" />
+    <None Include="shader\Quard.vert" />
+    <None Include="shader\SphereMesh.frag" />
+    <None Include="shader\SphereMesh.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

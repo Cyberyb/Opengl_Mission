@@ -6,10 +6,10 @@
 #include"Shader.h"//因为包含了glad库，需要置顶
 #include <iostream>
 #include<GLFW/glfw3.h>
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 //#include"SOIL2/stb_image.h"
-#include<SOIL2/SOIL2.h>
-#include<SOIL2/stb_image_write.h>
+//#include<SOIL2/SOIL2.h>
+//#include<SOIL2/stb_image_write.h>
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -25,6 +25,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void processMouseButton(GLFWwindow* window, int& count,bool &changed);
 
+void CullArea(vector<unsigned char>& pixels);
+
 //render函数
 //void renderSphereMesh(const Shader &shader);
 //void renderSphereCamera(const Shader& shader);
@@ -37,15 +39,15 @@ const unsigned int SCR_HEIGHT = 1200;
 const unsigned int VISI_WIDTH = 2500;
 const unsigned int VISI_HEIGHT = 50;
 
-const int POI_X = 256;
-const int POI_Y = 256;
-const int POI_Z = 256;
+const int POI_X = 64;
+const int POI_Y = 64;
+const int POI_Z = 64;
 
 const unsigned int POI_WIDTH = 50;
 const unsigned int POI_HEIGHT = 50;
 
 float fov = 60.0f;
-float yaw = -90.0f;//设置偏航角
+float yaw = 90.0f;//设置偏航角
 float pitch = 0.0f;//设置俯仰角
 bool firstmouse = true;//判断鼠标是否初次进入画面
 float lastX = (float)SCR_WIDTH / 2;//设置上一帧鼠标位置，默认为平面中央
@@ -56,10 +58,9 @@ float deltatime = 0.0f;
 float lasttime = 0.0f;
 
 glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//摄像机位置
-glm::vec3 camerafront = glm::vec3(0.2f, 0.0f, 1.0f);//
+glm::vec3 camerafront = glm::vec3(0.0f, 0.0f, 1.0f);//
 glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);//上向量
 glm::vec3 lightposition = glm::vec3(5.0, 5.0, 5.0);
-
 
 
 glm::mat4 viewMatrix(glm::vec3 p, glm::vec3 r)
@@ -143,7 +144,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//创建窗口
-	GLFWwindow* window = glfwCreateWindow(500, 500, "Missing Points", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Missing Points", NULL, NULL);
 
 	//连接上下文
 	glfwMakeContextCurrent(window);
@@ -154,7 +155,7 @@ int main()
 	glfwSetScrollCallback(window, scroll_callback);
 
 	//设置捕捉光标
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	//初始化glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -162,23 +163,18 @@ int main()
 		return -1;
 	}
 
-	GLint maxUniformBlockSize;
-	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
-	std::cout << "Max Uniform Block Size: " << maxUniformBlockSize << " bytes" << std::endl;
-
-
 
 	//创建并且编译Shader程序
-	Shader sphereShader("SphereMesh.vert", "SphereMesh.frag");
-	Shader cameraShader("CameraMesh.vert", "CameraMesh.frag");
-	Shader pointsShader("PointsMesh.vert", "PointsMesh.frag");
-	Shader depthShader("DepthShader.vert", "DepthShader.frag");
-	Shader QuardShader("Quard.vert", "Quard.frag");
+	Shader sphereShader("./shader/SphereMesh.vert", "./shader/SphereMesh.frag");
+	Shader cameraShader("./shader/CameraMesh.vert", "./shader/CameraMesh.frag");
+	Shader pointsShader("./shader/PointsMesh.vert", "./shader/PointsMesh.frag");
+	Shader depthShader("./shader/DepthShader.vert", "./shader/DepthShader.frag");
+	Shader QuardShader("./shader/Quard.vert", "./shader/Quard.frag");
 	
 	//获取Mesh
 	SphereMesh sphereM("mesh.txt");
 	CameraMesh cameraM("light.txt");
-	PointsMesh pointsM("box.txt");
+	//PointsMesh pointsM("box.txt");
 
 	std::vector<glm::vec3> vert = sphereM.vertices;
 	std::vector<glm::uvec3> index = sphereM.index;
@@ -188,14 +184,14 @@ int main()
 	std::vector<glm::vec4> camerafru = cameraM.GetCameraFru();
 	std::vector<cameraVertex> cameraVert = cameraM.cameraVer;
 
-	std::vector<glm::vec3> pointsvert = pointsM.points;
+	//std::vector<glm::vec3> pointsvert = pointsM.points;
 
 
 	//输出测试
 
 	//16:摄像机个数 vector的当前容量 16:vector的size?   12:vec3  3*4
-	std::cout << camerapos.size() << " " << sizeof(camerapos) << " " << sizeof(camerapos[0]) << std::endl;
-	std::cout << cameraVert.data()->camerafru.x << endl;
+	//std::cout << camerapos.size() << " " << sizeof(camerapos) << " " << sizeof(camerapos[0]) << std::endl;
+	//std::cout << cameraVert.data()->camerafru.x << endl;
 
 
 	//提前计算16个摄像机的变换矩阵
@@ -235,7 +231,7 @@ int main()
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO[0]);//球幕VBO
 	glGenBuffers(1, &VBO[1]);//摄像机VBO
-	glGenBuffers(1, &VBO[2]);
+	//glGenBuffers(1, &VBO[2]);
 	glGenBuffers(1, &EBO);
 
 	//绑定VAO
@@ -266,13 +262,13 @@ int main()
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));//传Fru
 	glEnableVertexAttribArray(2);
 
-	unsigned int pointsVAO;
-	glGenVertexArrays(1, &pointsVAO);
-	glBindVertexArray(pointsVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-	glEnableVertexAttribArray(0);
+	//unsigned int pointsVAO;
+	//glGenVertexArrays(1, &pointsVAO);
+	//glBindVertexArray(pointsVAO);
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
+	//glEnableVertexAttribArray(0);
 	
 
 	//sphereShader.use();
@@ -362,6 +358,101 @@ int main()
 	int viewMatCount = 0;//用于16个摄像机的视角切换计数  |   用于不同layer的切换
 	//渲染循环
 	bool mouseButtonChanged = true;
+
+
+	//单次渲染，1.渲染16张深度贴图  2.渲染POI_Y层筛选后点的分布贴图
+
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glViewport(0, 0, 500, 500);
+	glm::mat4 model = glm::mat4(1.0f);
+	/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
+	/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
+	默认情况下设置的位掩码所有位都为1，不影响输出*/
+	//glStencilMask(0xFF);
+	//glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	sphereShader.use();
+	sphereShader.setMat4("model", model);
+	sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
+	for (int i = 0; i < 16; i++)
+	{
+		sphereShader.setInt("count", i);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(VAO);
+
+		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, 500, 500);
+	}
+
+
+	/*------------获取OI_X * POI_Z个点的可视性情况纹理，共计POI_Y层---------*/
+	glViewport(0, 0, POI_X, POI_Z);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	QuardShader.use();
+	QuardShader.setInt("count", viewMatCount);//传递摄像机计数
+	QuardShader.setMat4("model", model);
+	QuardShader.setInt("row", POI_X);
+	QuardShader.setInt("col", POI_Z);
+	QuardShader.setInt("hei", POI_Y);
+	//QuardShader.setInt("floors",);
+	GLint texIndex[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
+	glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16, texIndex);
+
+	for (int i = 0; i < 16; i++)
+	{
+
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+	}
+
+	//逐层渲染
+	for (int layer = 0; layer < POI_Y; layer++)
+	{
+		QuardShader.setInt("layer", layer);
+		glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[layer]);
+		glClear(GL_COLOR_BUFFER_BIT);
+		renderQuad();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, POI_X, POI_Z);
+	}
+
+	/*--------------输出模块/挖空算法---------------*/
+	setOutputFormat(POI_X, POI_Z, POI_Y);
+	int textureWidth;
+	for (int layer = 0; layer < POI_Y; layer++)
+	{
+		std::vector<unsigned char> pixels(POI_X * POI_Z);
+		glBindTexture(GL_TEXTURE_2D, visiMap[layer]);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &textureWidth);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
+
+
+		CullArea(pixels);
+
+		savePixelsToTxt(pixels, "matchPoints.txt", layer);
+	}
+
+	//获取处理后的点数据，绑定VAO、VBO
+	PointsMesh pointsM("matchPoints.txt");
+	std::vector<glm::vec3> pointsvert = pointsM.points;
+
+	unsigned int pointsVAO;
+	glGenVertexArrays(1, &pointsVAO);
+	glBindVertexArray(pointsVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
+	glEnableVertexAttribArray(0);
+
+	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -370,56 +461,12 @@ int main()
 		lasttime = currenttime;
 
 		processInput(window);
-		processMouseButton(window, viewMatCount, mouseButtonChanged);
+		//processMouseButton(window, viewMatCount, mouseButtonChanged);
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-		glViewport(0, 0, 500, 500);
-		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		//glClear(GL_DEPTH_BUFFER_BIT);
-
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		//glm::mat4 projection = glm::mat4(1.0f);
-		//projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 model = glm::mat4(1.0f);
-
-
-
-		/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
-		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
-		默认情况下设置的位掩码所有位都为1，不影响输出*/
-		//glStencilMask(0xFF);
-		//glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-
-		sphereShader.use();
-		sphereShader.setMat4("model", model);
-		sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
-		for (int i = 0; i < 16; i++)
-		{
-			sphereShader.setInt("count", i);
-			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
-			glClear(GL_DEPTH_BUFFER_BIT);
-
-			glBindVertexArray(VAO);
-
-			glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
-
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glViewport(0, 0, 500, 500);
-		}
-
-	
-		//sphereShader.setMat4("view", view);
-		//sphereShader.setMat4("proj", projection);
-		//模型矩阵，控制物体的旋转
-
 
 
 
@@ -428,113 +475,67 @@ int main()
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
 
-		//sphereShader.use();
+		sphereShader.use();
+		glm::mat4 view = glm::mat4(1.0);
+		view = glm::lookAt(cameraposition, cameraposition + camerafront, up);
+		glm::mat4 projection = glm::mat4(1.0);
+		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		sphereShader.setMat4("camera_view", view);//定义lookat矩阵);
+		sphereShader.setMat4("camera_proj", projection);
+		sphereShader.setInt("free", 1);
+		//模型矩阵，控制物体的旋转
+		sphereShader.setMat4("model", model);
+		sphereShader.setVec3("lightPos", lightposition);
 
+		glBindVertexArray(VAO);
 
-		//sphereShader.setMat4("view", view);
-		//sphereShader.setMat4("proj", projection);
-		////模型矩阵，控制物体的旋转
-		//sphereShader.setMat4("model", model);
-		//sphereShader.setVec3("lightPos", lightposition);
-
-		//glBindVertexArray(VAO);
-
-		//glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 
 		/*----------------画摄像机-----------------*/
-		//glStencilMask(0x00);
 
-		//cameraShader.use();
-
-
-		//cameraShader.setMat4("view", view);
-		//cameraShader.setMat4("proj", projection);
-		////模型矩阵，控制物体的旋转
-		////glm::mat4 model_c = glm::mat4(1.0f);
-		//cameraShader.setMat4("model", model);
+		cameraShader.use();
 
 
-		//glBindVertexArray(cameraVAO);
-		//glPointSize(20.0f);
-		//glDrawArrays(GL_POINTS, 0, cameraVert.size());
+		cameraShader.setMat4("view", view);
+		cameraShader.setMat4("proj", projection);
+		//模型矩阵，控制物体的旋转
+		//glm::mat4 model_c = glm::mat4(1.0f);
+		cameraShader.setMat4("model", model);
+
+
+		glBindVertexArray(cameraVAO);
+		glPointSize(20.0f);
+		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
 		//glDisable(GL_DEPTH_TEST);
 		//glStencilMask(0x00);//禁用模板缓冲写入
 		//glStencilFunc(GL_EQUAL, 1, 0xFF);
 
-		//pointsShader.use();
+		pointsShader.use();
 
-		//pointsShader.setMat4("view", view);
-		//pointsShader.setMat4("proj", projection);
-		////模型矩阵，控制物体的旋转
-		//pointsShader.setMat4("model", model);
-
-		//glBindTexture(GL_TEXTURE_2D, depthMap);
-		//glBindVertexArray(pointsVAO);
-		//glPointSize(2.0f);
-		//glDrawArrays(GL_POINTS, 0, pointsvert.size());
-
-
-		//glStencilMask(0xFF);
-		//glEnable(GL_DEPTH_TEST);
-
-		/*---------------画深度贴图---------------*/
-		//depthShader.use();
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-		/*------------获取100*100个点的可视性情况纹理，共计100层---------*/
-		glViewport(0, 0, POI_X, POI_Z);
-
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		QuardShader.use();
-		QuardShader.setInt("count", viewMatCount);//传递摄像机计数
-		//QuardShader.setMat4("view", view);
-		//QuardShader.setMat4("proj", projection);
+		pointsShader.setMat4("view", view);
+		pointsShader.setMat4("proj", projection);
 		//模型矩阵，控制物体的旋转
-		QuardShader.setMat4("model", model);
-		QuardShader.setInt("row", POI_X);
-		QuardShader.setInt("col", POI_Z);
-		QuardShader.setInt("hei", POI_Y);
-		//QuardShader.setInt("floors",);
-		GLint texIndex[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-		glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16,texIndex);
-		
-		for (int i = 0; i < 16; i++)
-		{
-			
-			glActiveTexture(GL_TEXTURE0 + i);
-			glBindTexture(GL_TEXTURE_2D, depthMap[i]);
-		}
+		pointsShader.setMat4("model", model);
 
-		//逐层渲染
-		for (int layer = 0; layer < POI_Y; layer++)
-		{
-			QuardShader.setInt("layer", layer);
-			glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[layer]);
-			glClear(GL_COLOR_BUFFER_BIT);
-			renderQuad();
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glViewport(0, 0, POI_X, POI_Z);
-		}
+		glBindVertexArray(pointsVAO);
+		glPointSize(10.0f);
+		glDrawArrays(GL_POINTS, 0, pointsvert.size());
 
-		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
 
 
 		/*-----------显示一层POI_X * POI_Z点的情况-------------*/
 
-		glViewport(0, 0,500, 500);
-	    depthShader.use();
-		//QuardShader.setInt("floors",);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, visiMap[viewMatCount]);
-		renderQuad();
+		//glViewport(0, 0,500, 500);
+	 //   depthShader.use();
+		////QuardShader.setInt("floors",);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, visiMap[viewMatCount]);
+		//renderQuad();
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 				//收尾阶段
@@ -552,22 +553,6 @@ int main()
 
 
 
-
-
-	/*--------------输出模块---------------*/
-	setOutputFormat(POI_X, POI_Z, POI_Y);
-	int textureWidth;
-	for (int layer = 0; layer < POI_Y; layer++)
-	{
-		std::vector<unsigned char> pixels(POI_X* POI_Z*4);
-		glBindTexture(GL_TEXTURE_2D, visiMap[layer]);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &textureWidth);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
-
-		
-		savePixelsToTxt(pixels, "macthPoints.txt", layer);
-	}
-
 	
 
 	//std::vector<unsigned char> Depthpixels(SCR_WIDTH * SCR_HEIGHT);
@@ -582,6 +567,7 @@ int main()
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &cameraVAO);
+	glDeleteVertexArrays(1, &pointsVAO);
 	glDeleteBuffers(1, &VBO[0]);
 	glDeleteBuffers(1, &VBO[1]);
 	glDeleteBuffers(1, &VBO[2]);
@@ -620,6 +606,38 @@ void renderQuad()
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
+}
+
+void CullArea(vector<unsigned char>& pixels)
+{
+	//8个方向
+	int x[] = {-1,0,1,-1,1,-1, 0, 1 };
+	int y[] = {1, 1,1, 0,0,-1,-1,-1};
+	//P用于保存修改前的数组，用于进行8邻域判断
+	vector<unsigned char> p = pixels;
+	for (int i = 0; i < POI_Z; i++)//行
+	{
+		for (int j = 0; j < POI_X; j++)//列
+		{
+			bool draw = false;
+			for (int k = 0; k < 8; k++)
+			{
+				if ((i + y[k]) < 0 || (i + y[k]) >= POI_Y || (j + x[k]) < 0 || (j + x[k]) >= POI_X)
+				{
+					//超出纹理范围
+					break;
+				}
+
+				if (p[(i + y[k]) * POI_X + (j + x[k])] == 0)
+				{
+					draw = true;
+					break;
+				}					
+			}
+			if (!draw && pixels[i * POI_X + j]==255)
+				pixels[i * POI_X + j] = 0;
+		}
+	}
 }
 
 

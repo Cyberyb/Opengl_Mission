@@ -15,66 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Openglproject.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="glad.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="SphereMesh.vert">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="SphereMesh.frag">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="CameraMesh.vert">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="CameraMesh.frag">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="PointsMesh.vert">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="PointsMesh.frag">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="DepthShader.vert">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="DepthShader.frag">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="Quard.vert">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="Quard.frag">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Shader.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="SphereMesh.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="CameraMesh.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="PointsMesh.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="OutputData.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="mesh.txt">
       <Filter>资源文件</Filter>
     </Text>
@@ -84,5 +24,71 @@
     <Text Include="Box.txt">
       <Filter>资源文件</Filter>
     </Text>
+    <Text Include="CMakeLists.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Camera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CameraMesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\OutputData.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PointsMesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Shader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SphereMesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\glad.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Openglproject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\CameraMesh.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\CameraMesh.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\DepthShader.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\DepthShader.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\PointsMesh.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\PointsMesh.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\Quard.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\Quard.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\SphereMesh.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shader\SphereMesh.vert">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
