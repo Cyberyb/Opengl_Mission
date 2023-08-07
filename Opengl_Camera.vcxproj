@@ -27,6 +27,8 @@
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\CameraMesh.h" />
+    <ClInclude Include="src\GenMesh.h" />
+    <ClInclude Include="src\GenVolum.h" />
     <ClInclude Include="src\OutputData.h" />
     <ClInclude Include="src\PointsMesh.h" />
     <ClInclude Include="src\Shader.h" />

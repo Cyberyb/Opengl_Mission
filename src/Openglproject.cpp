@@ -17,6 +17,12 @@
 #include "CameraMesh.h"
 #include "PointsMesh.h"
 #include "OutputData.h"
+#include "GenMesh.h"
+#include "GenVolum.h"
+
+#define POI_X 64
+#define POI_Y 64
+#define POI_Z 64
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -39,9 +45,9 @@ const unsigned int SCR_HEIGHT = 1200;
 const unsigned int VISI_WIDTH = 2500;
 const unsigned int VISI_HEIGHT = 50;
 
-const int POI_X = 64;
-const int POI_Y = 64;
-const int POI_Z = 64;
+//const int POI_X = 64;
+//const int POI_Y = 64;
+//const int POI_Z = 64;
 
 const unsigned int POI_WIDTH = 50;
 const unsigned int POI_HEIGHT = 50;
@@ -133,6 +139,7 @@ bool GLLogCall(const char* function, const char* file, int line)
 	}
 	return true;
 }
+
 
 
 int main()
@@ -391,7 +398,7 @@ int main()
 	}
 
 
-	/*------------获取OI_X * POI_Z个点的可视性情况纹理，共计POI_Y层---------*/
+	/*------------获取POI_X * POI_Z个点的可视性情况纹理，共计POI_Y层---------*/
 	glViewport(0, 0, POI_X, POI_Z);
 
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -424,9 +431,26 @@ int main()
 		glViewport(0, 0, POI_X, POI_Z);
 	}
 
-	/*--------------输出模块/挖空算法---------------*/
+	/*--------------输出模块/挖空算法/网格点结构体生成/网格索引生成---------------*/
 	setOutputFormat(POI_X, POI_Z, POI_Y);
+
+	std::vector<glm::vec3> volumePoints;
+	std::vector<glm::ivec3> volumeIndex;
+	unsigned int volumeVAO[POI_Y];
+	unsigned int volumeVBO[POI_Y];
+	unsigned int volumeEBO[POI_Y];
+	glGenVertexArrays(POI_Y, volumeVAO);
+	glGenBuffers(POI_Y, volumeVBO);
+	glGenBuffers(POI_Y, volumeEBO);
+
+	unsigned int points_count[POI_Y] = { 0 };
+	unsigned int elements_count[POI_Y] = { 0 };
+
 	int textureWidth;
+	//int seq = 0;//用于生成序号
+	//vector<vector<int>> pointSeq;
+	//vector <vector<MeshPoint>> Meshp;
+	setFormat_v(POI_X, POI_Y, POI_Z);
 	for (int layer = 0; layer < POI_Y; layer++)
 	{
 		std::vector<unsigned char> pixels(POI_X * POI_Z);
@@ -434,23 +458,43 @@ int main()
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &textureWidth);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
 
-
+		
 		CullArea(pixels);
+
+		volumePoints = GenVolumePoints(pixels, layer, points_count[layer]);
+		volumeIndex = GenVolumeIndex(pixels,elements_count[layer]);
+
+		glBindVertexArray(volumeVAO[layer]);
+		glBindBuffer(GL_ARRAY_BUFFER, volumeVBO[layer]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * volumePoints.size(), volumePoints.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
+		glEnableVertexAttribArray(0);
+		glBindBuffer(0, volumeVBO[layer]);
+		
+		
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, volumeEBO[layer]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, volumeIndex.size() * 3 * sizeof(unsigned int), volumeIndex.data(), GL_STATIC_DRAW);
+
+
+
+		//Meshp.push_back(GetPosAndSeq(pixels, layer,seq_count));
 
 		savePixelsToTxt(pixels, "matchPoints.txt", layer);
 	}
+	//cout << "points counts" << pointSeq.size() << endl;
 
 	//获取处理后的点数据，绑定VAO、VBO
-	PointsMesh pointsM("matchPoints.txt");
-	std::vector<glm::vec3> pointsvert = pointsM.points;
+	//PointsMesh pointsM("matchPoints.txt");
+	//std::vector<glm::vec3> pointsvert = pointsM.points;
 
-	unsigned int pointsVAO;
-	glGenVertexArrays(1, &pointsVAO);
-	glBindVertexArray(pointsVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-	glEnableVertexAttribArray(0);
+	//unsigned int pointsVAO;
+	//glGenVertexArrays(1, &pointsVAO);
+	//glBindVertexArray(pointsVAO);
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
+	//glEnableVertexAttribArray(0);
+
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	while (!glfwWindowShouldClose(window))
@@ -519,9 +563,16 @@ int main()
 		//模型矩阵，控制物体的旋转
 		pointsShader.setMat4("model", model);
 
-		glBindVertexArray(pointsVAO);
-		glPointSize(10.0f);
-		glDrawArrays(GL_POINTS, 0, pointsvert.size());
+		for (int i = 0; i < POI_Y; i++)
+		{
+			glBindVertexArray(volumeVAO[i]);
+			//glPointSize(2.0f);
+			//glDrawArrays(GL_POINTS, 0, points_count[i] * 8);
+			glDrawElements(GL_TRIANGLES, elements_count[i] * 36, GL_UNSIGNED_INT, nullptr);
+		}
+
+		//
+
 
 
 
@@ -567,10 +618,13 @@ int main()
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &cameraVAO);
-	glDeleteVertexArrays(1, &pointsVAO);
+	glDeleteVertexArrays(POI_Y, volumeVAO);
+	//glDeleteVertexArrays(1, &pointsVAO);
 	glDeleteBuffers(1, &VBO[0]);
 	glDeleteBuffers(1, &VBO[1]);
-	glDeleteBuffers(1, &VBO[2]);
+	//glDeleteBuffers(1, &VBO[2]);
+	glDeleteBuffers(POI_Y, volumeVBO);
+	//delete(volumeVBO);
 	glDeleteBuffers(1, &EBO);
 	for(int i = 0;i<16;i++)
 		glDeleteFramebuffers(1, &depthMapFBO[i]);
@@ -608,37 +662,6 @@ void renderQuad()
 	glBindVertexArray(0);
 }
 
-void CullArea(vector<unsigned char>& pixels)
-{
-	//8个方向
-	int x[] = {-1,0,1,-1,1,-1, 0, 1 };
-	int y[] = {1, 1,1, 0,0,-1,-1,-1};
-	//P用于保存修改前的数组，用于进行8邻域判断
-	vector<unsigned char> p = pixels;
-	for (int i = 0; i < POI_Z; i++)//行
-	{
-		for (int j = 0; j < POI_X; j++)//列
-		{
-			bool draw = false;
-			for (int k = 0; k < 8; k++)
-			{
-				if ((i + y[k]) < 0 || (i + y[k]) >= POI_Y || (j + x[k]) < 0 || (j + x[k]) >= POI_X)
-				{
-					//超出纹理范围
-					break;
-				}
-
-				if (p[(i + y[k]) * POI_X + (j + x[k])] == 0)
-				{
-					draw = true;
-					break;
-				}					
-			}
-			if (!draw && pixels[i * POI_X + j]==255)
-				pixels[i * POI_X + j] = 0;
-		}
-	}
-}
 
 
 void mouse_callback(GLFWwindow*window, double xpos, double ypos)//鼠标坐标的调用，用于控制视角
