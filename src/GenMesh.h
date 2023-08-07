@@ -11,7 +11,7 @@ struct MeshPoint {
 	int seq = 0;//序号
 	int connect_count = 0;//连线个数
 	int next_seq = 0;
-	MeshPoint(glm::ivec3 position, int sq, int count,int nxsq)
+	MeshPoint(glm::ivec3 position, int sq, int count, int nxsq)
 	{
 		pos = position;
 		seq = sq;
@@ -38,7 +38,7 @@ void setFormat(int width, int height, int layer)
 }
 
 //用于剔除同一平面内的点，保留外层
-void CullArea(vector<unsigned char>& pixels)
+void CullArea_Eight(vector<unsigned char>& pixels)
 {
 	//8个方向
 	int x[] = { -1,0,1,-1,1,-1, 0, 1 };
@@ -70,11 +70,80 @@ void CullArea(vector<unsigned char>& pixels)
 	}
 }
 
+void CullArea_Four(vector<unsigned char>& pixels)
+{
+	//8个方向
+	int x[] = {0,-1,1, 0};
+	int y[] = { 1, 0,0,-1};
+	//P用于保存修改前的数组，用于进行8邻域判断
+	vector<unsigned char> p = pixels;
+	for (int i = 0; i < HEI; i++)//行
+	{
+		for (int j = 0; j < WID; j++)//列
+		{
+			bool draw = false;
+			for (int k = 0; k < 4; k++)
+			{
+				if ((i + y[k]) < 0 || (i + y[k]) >= LAY || (j + x[k]) < 0 || (j + x[k]) >= WID)
+				{
+					//超出纹理范围
+					break;
+				}
+
+				if (p[(i + y[k]) * WID + (j + x[k])] == 0)
+				{
+					draw = true;
+					break;
+				}
+			}
+			if (!draw && pixels[i * WID + j] == 255)
+				pixels[i * WID + j] = 0;
+		}
+	}
+}
+
+
+void CullArea_Six(vector<unsigned char>& pixels, vector<unsigned char>& down, vector<unsigned char>& up)
+{
+	//8个方向
+	int x[] = { 0,-1,1, 0 ,0,0};
+	int z[] = { 1, 0,0,-1 ,0,0};
+	int y[] = { 0, 0,0,0 ,1,-1 };
+	//P用于保存修改前的数组，用于进行6邻域判断
+	vector<vector<unsigned char>> p;	
+	p.push_back(down);
+	p.push_back(pixels);	
+	p.push_back(up);
+
+	for (int i = 0; i < HEI; i++)//行
+	{
+		for (int j = 0; j < WID; j++)//列
+		{
+			bool draw = false;
+			for (int k = 0; k < 6; k++)
+			{
+				if ((i + z[k]) < 0 || (i + z[k]) >= LAY || (j + x[k]) < 0 || (j + x[k]) >= WID)
+				{
+					//超出纹理范围
+					break;
+				}
+
+				if (p[y[k]+1][(i + z[k]) * WID + (j + x[k])] == 0)
+				{
+					draw = true;
+					break;
+				}
+			}
+			if (!draw && pixels[i * WID + j] == 255)
+				pixels[i * WID + j] = 0;
+		}
+	}
+}
 //用于生成网格点的位置以及其序号
-vector<MeshPoint> GetPosAndSeq(vector<unsigned char>& pixels,int layer,int &seq)
+vector<MeshPoint> GetPosAndSeq(vector<unsigned char>& pixels, int layer, int& seq)
 {
 	vector<MeshPoint> PointsList;
-	for (int i = 0; i<pixels.size();i++)
+	for (int i = 0; i < pixels.size(); i++)
 	{
 		if (pixels[i] == 255)
 		{
@@ -87,9 +156,9 @@ vector<MeshPoint> GetPosAndSeq(vector<unsigned char>& pixels,int layer,int &seq)
 
 
 //用于查找同一层的下一个点   BFS算法
-const int dx[] = {-1, -1, 0, 1, 1, 1, 0,-1};
+const int dx[] = { -1, -1, 0, 1, 1, 1, 0,-1 };
 const int dy[] = { 0, -1,-1,-1, 0, 1, 1, 1 };
-int GetNextPoint(const vector<MeshPoint>& points,const vector<unsigned char>& pixels, MeshPoint& start,int layercount,int layer)
+int GetNextPoint(const vector<MeshPoint>& points, const vector<unsigned char>& pixels, MeshPoint& start, int layercount, int layer)
 {
 	int n = HEI;
 	int m = WID;
@@ -107,7 +176,7 @@ int GetNextPoint(const vector<MeshPoint>& points,const vector<unsigned char>& pi
 			int new_x = curr.pos.x + dx[i];
 			int new_y = curr.pos.z + dy[i];
 
-			if (new_x >= 0 && new_x < n && new_y >= 0 && new_y < m && visited[new_x][new_y] == false) 
+			if (new_x >= 0 && new_x < n && new_y >= 0 && new_y < m && visited[new_x][new_y] == false)
 			{
 				int seq = -1;
 				visited[new_x][new_y] = true;
@@ -133,4 +202,3 @@ int findSeqByPos(const vector<MeshPoint>& points, glm::ivec3 pos)
 	}
 	return -1;
 }
-

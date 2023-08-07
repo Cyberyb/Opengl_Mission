@@ -47,10 +47,10 @@
     <ClInclude Include="src\SphereMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\GenMesh.h">
+    <ClInclude Include="src\GenVolum.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\GenVolum.h">
+    <ClInclude Include="src\GenMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

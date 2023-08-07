@@ -20,9 +20,9 @@
 #include "GenMesh.h"
 #include "GenVolum.h"
 
-#define POI_X 64
-#define POI_Y 64
-#define POI_Z 64
+#define POI_X 128
+#define POI_Y 128
+#define POI_Z 128
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -451,15 +451,22 @@ int main()
 	//vector<vector<int>> pointSeq;
 	//vector <vector<MeshPoint>> Meshp;
 	setFormat_v(POI_X, POI_Y, POI_Z);
-	for (int layer = 0; layer < POI_Y; layer++)
+	for (int layer = 1; layer < POI_Y -1; layer++)
 	{
 		std::vector<unsigned char> pixels(POI_X * POI_Z);
 		glBindTexture(GL_TEXTURE_2D, visiMap[layer]);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &textureWidth);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
 
+		std::vector<unsigned char> pixels_down(POI_X * POI_Z);
+		glBindTexture(GL_TEXTURE_2D, visiMap[layer-1]);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels_down.data());
+
+		std::vector<unsigned char> pixels_up(POI_X * POI_Z);
+		glBindTexture(GL_TEXTURE_2D, visiMap[layer+1]);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels_up.data());
+
 		
-		CullArea(pixels);
+		CullArea_Six(pixels,pixels_down,pixels_up);
 
 		volumePoints = GenVolumePoints(pixels, layer, points_count[layer]);
 		volumeIndex = GenVolumeIndex(pixels,elements_count[layer]);
@@ -497,6 +504,8 @@ int main()
 
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -518,7 +527,7 @@ int main()
 		/*----------------画球幕-----------------*/
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
-
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		sphereShader.use();
 		glm::mat4 view = glm::mat4(1.0);
 		view = glm::lookAt(cameraposition, cameraposition + camerafront, up);
@@ -534,7 +543,7 @@ int main()
 		glBindVertexArray(VAO);
 
 		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
-
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		/*----------------画摄像机-----------------*/
 
 		cameraShader.use();
