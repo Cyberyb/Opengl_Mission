@@ -13,6 +13,7 @@
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "Camera.h"
 #include "SphereMesh.h"
 #include "CameraMesh.h"
 #include "PointsMesh.h"
@@ -20,18 +21,17 @@
 #include "GenMesh.h"
 #include "GenVolum.h"
 
-#define POI_X 128
-#define POI_Y 128
-#define POI_Z 128
+#define POI_X 64
+#define POI_Y 64
+#define POI_Z 64
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-//void mousebutton_callback(GLFWwindow* window, int button, int action, int mods);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow* window);
 void processMouseButton(GLFWwindow* window, int& count,bool &changed);
-
-void CullArea(vector<unsigned char>& pixels);
+void processMousePress(GLFWwindow* window);
 
 //render函数
 //void renderSphereMesh(const Shader &shader);
@@ -56,17 +56,16 @@ float fov = 60.0f;
 float yaw = 90.0f;//设置偏航角
 float pitch = 0.0f;//设置俯仰角
 bool firstmouse = true;//判断鼠标是否初次进入画面
-float lastX = (float)SCR_WIDTH / 2;//设置上一帧鼠标位置，默认为平面中央
-float lastY = (float)SCR_HEIGHT / 2;
+double lastX = (float)SCR_WIDTH / 2;//设置上一帧鼠标位置，默认为平面中央
+double lastY = (float)SCR_HEIGHT / 2;
 
 //时间用于设置鼠标在每一帧的位置变化属性
 float deltatime = 0.0f;
 float lasttime = 0.0f;
 
 glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//摄像机位置
-glm::vec3 camerafront = glm::vec3(0.0f, 0.0f, 1.0f);//
-glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);//上向量
 glm::vec3 lightposition = glm::vec3(5.0, 5.0, 5.0);
+Camera camera(cameraposition);
 
 
 glm::mat4 viewMatrix(glm::vec3 p, glm::vec3 r)
@@ -158,11 +157,12 @@ int main()
 
 	//注册回调函数
 	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
+	//glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
+	//glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	//设置捕捉光标
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	//初始化glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -516,6 +516,7 @@ int main()
 
 		processInput(window);
 		//processMouseButton(window, viewMatCount, mouseButtonChanged);
+		processMousePress(window);
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -531,9 +532,10 @@ int main()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		sphereShader.use();
 		glm::mat4 view = glm::mat4(1.0);
-		view = glm::lookAt(cameraposition, cameraposition + camerafront, up);
+		view = camera.GetviewMatrix();
+		//view = glm::lookAt(cameraposition, cameraposition + camerafront, up);
 		glm::mat4 projection = glm::mat4(1.0);
-		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(camera.Fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		sphereShader.setMat4("camera_view", view);//定义lookat矩阵);
 		sphereShader.setMat4("camera_proj", projection);
 		sphereShader.setInt("free", 1);
@@ -682,54 +684,32 @@ void mouse_callback(GLFWwindow*window, double xpos, double ypos)//鼠标坐标�
 		lastY = ypos;
 		firstmouse = false;
 	}
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
+	double xoffset = xpos - lastX;
+	double yoffset = lastY - ypos;
 	lastX = xpos;
 	lastY = ypos;
 
-	float sensitivity = 0.05f;//设置鼠标灵敏度
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;//设置俯仰角和偏转角
-	pitch += yoffset;
-
-	if (pitch > 89.0f)//设置俯仰角的限制
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
-
-	//计算方向向量
-	glm::vec3 front;
-	front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-	front.y = sin(glm::radians(pitch));
-	front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-	camerafront = glm::normalize(front);
+	//camera.ProcessMouseMove(xoffset, yoffset);
+	camera.ProcessMousePressMove(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-		fov -= yoffset;
-	if (fov <= 1.0f)
-		fov = 1.0f;
-	else if (fov >= 45.0f)
-		fov = 45.0f;
+	camera.ProcessMouseScoll(yoffset);
 }
 
 void processInput(GLFWwindow* window)
 {
-	//keybord
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	float cameraspeed = 2.5f *deltatime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraposition += cameraspeed * glm::vec3(camerafront.x,camerafront.y,camerafront.z);//视角移动，会改变y值
+		camera.ProcessKeyboard(FORWARD, deltatime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraposition -= cameraspeed * glm::vec3(camerafront.x, camerafront.y, camerafront.z);
+		camera.ProcessKeyboard(BACKWARD, deltatime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraposition -= glm::normalize(glm::cross(camerafront, up)) * cameraspeed;
+		camera.ProcessKeyboard(LEFT, deltatime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraposition += glm::normalize(glm::cross(camerafront, up)) * cameraspeed;
+		camera.ProcessKeyboard(RIGHT, deltatime);
 }
 
 void processMouseButton(GLFWwindow* window,int &count,bool &changed)
@@ -743,6 +723,39 @@ void processMouseButton(GLFWwindow* window,int &count,bool &changed)
 	else if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE && !changed )
 	{
 		changed = true;
+	}
+}
+
+void processMousePress(GLFWwindow* window)
+{
+	//mouse
+	double lx = lastX, ly = lastY;
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	{
+		
+		glfwGetCursorPos(window, &lastX, &lastY);
+		double xoffset = lx - lastX;
+		double yoffset = lastY - ly;
+		//lastX = lx;
+		//lastY = ly;
+		camera.ProcessMousePressMove(xoffset, yoffset);
+	}
+	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+	{
+		glfwGetCursorPos(window, &lastX, &lastY);
+	}
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_1)
+	{
+		if (action == GLFW_PRESS)
+		{
+
+		}
+		else if (action == GLFW_RELEASE) {
+		}
 	}
 }
 
