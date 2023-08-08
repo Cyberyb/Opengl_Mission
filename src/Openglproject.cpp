@@ -451,6 +451,7 @@ int main()
 	//vector<vector<int>> pointSeq;
 	//vector <vector<MeshPoint>> Meshp;
 	setFormat_v(POI_X, POI_Y, POI_Z);
+	setFormat(POI_X, POI_Y, POI_Z);
 	for (int layer = 1; layer < POI_Y -1; layer++)
 	{
 		std::vector<unsigned char> pixels(POI_X * POI_Z);

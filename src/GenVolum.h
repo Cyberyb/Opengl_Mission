@@ -17,6 +17,9 @@ void setFormat_v(int width, int height, int layer)
 	WID_V = width;
 	HEI_V = height;
 	LAY_V = layer;
+    lenwid = 5.5 / WID_V;
+    lenhei = 5.5 / HEI_V;
+    lenlay = 5.5 / LAY_V;
 }
 
 vector<glm::vec3> GenVolumePoints(vector<unsigned char>& pixels,int layer,unsigned int &count)
