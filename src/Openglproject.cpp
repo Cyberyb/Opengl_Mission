@@ -13,6 +13,9 @@
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include "Camera.h"
 #include "SphereMesh.h"
 #include "CameraMesh.h"
@@ -38,9 +41,10 @@ void processMousePress(GLFWwindow* window);
 //void renderSphereCamera(const Shader& shader);
 //void renderSpherePoints(const Shader& shader);
 void renderQuad();
+void renderUI(bool& show_demo_window, bool& show_another_window);
 
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1200;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 const unsigned int VISI_WIDTH = 2500;
 const unsigned int VISI_HEIGHT = 50;
@@ -139,10 +143,15 @@ bool GLLogCall(const char* function, const char* file, int line)
 	return true;
 }
 
+static void glfw_error_callback(int error, const char* description)
+{
+	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
 
 
 int main()
 {
+	glfwSetErrorCallback(glfw_error_callback);
 	//glfw的初始化以及指明版本号
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -154,6 +163,33 @@ int main()
 
 	//连接上下文
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1); // Enable vsync
+
+	//设置imgui上下文
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+	//设置imgui风格
+	ImGui::StyleColorsDark();
+
+	//设置平台、渲染器后端
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
+
+	//imgui字体
+	io.Fonts->AddFontFromFileTTF("imgui/YaHei.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+	io.Fonts->Build();
+
+	//imgui状态
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	bool linemode_Sphere = true;
+	bool linemode_Main = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	ImVec4 main_color = ImVec4(1.0f, 0.0f, 0.0f, 0.0f);
 
 	//注册回调函数
 	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -529,11 +565,13 @@ int main()
 		/*----------------画球幕-----------------*/
 		/*glStencilMask允许我们设置一个位掩码(Bitmask)，它会与将要写入缓冲的模板值进行与(AND)运算。
 		默认情况下设置的位掩码所有位都为1，不影响输出*/
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if(linemode_Sphere)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		sphereShader.use();
 		glm::mat4 view = glm::mat4(1.0);
 		view = camera.GetviewMatrix();
-		//view = glm::lookAt(cameraposition, cameraposition + camerafront, up);
 		glm::mat4 projection = glm::mat4(1.0);
 		projection = glm::perspective(glm::radians(camera.Fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		sphereShader.setMat4("camera_view", view);//定义lookat矩阵);
@@ -564,16 +602,16 @@ int main()
 		glDrawArrays(GL_POINTS, 0, cameraVert.size());
 
 		/*----------------画采样点-----------------*/
-		//glDisable(GL_DEPTH_TEST);
-		//glStencilMask(0x00);//禁用模板缓冲写入
-		//glStencilFunc(GL_EQUAL, 1, 0xFF);
-
+		if (linemode_Main)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		pointsShader.use();
 
 		pointsShader.setMat4("view", view);
 		pointsShader.setMat4("proj", projection);
-		//模型矩阵，控制物体的旋转
 		pointsShader.setMat4("model", model);
+		pointsShader.setVec4("main_color", glm::vec4(main_color.x,main_color.y,main_color.z,main_color.w));
 
 		for (int i = 0; i < POI_Y; i++)
 		{
@@ -582,7 +620,7 @@ int main()
 			//glDrawArrays(GL_POINTS, 0, points_count[i] * 8);
 			glDrawElements(GL_TRIANGLES, elements_count[i] * 36, GL_UNSIGNED_INT, nullptr);
 		}
-
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//
 
 
@@ -601,9 +639,50 @@ int main()
 		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-				//收尾阶段
-		glfwSwapBuffers(window);
+		/*-----------Imgui绘制-------------*/
+		//renderUI(show_demo_window, show_another_window);
+
 		glfwPollEvents();
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		{
+			static float f = 0.0f;
+			static int counter = 0;
+			static int size = POI_Y;
+
+			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text((const char*)u8"是否启用线框模式");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox((const char*)u8"球幕", &linemode_Sphere);      // Edit bools storing our window open/close state
+			ImGui::Checkbox((const char*)u8"主体", &linemode_Main);
+
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::ColorEdit3((const char*)u8"主体颜色", (float*)&main_color); // Edit 3 floats representing a color
+
+			ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 512);
+			if (ImGui::Button("重置大小"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+				counter++;
+			ImGui::SameLine();
+			ImGui::Text("counter = %d", counter);
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			ImGui::End();
+		}
+
+
+		ImGui::Render();
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		//glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+		//glClear(GL_COLOR_BUFFER_BIT);
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		glfwSwapBuffers(window);
+
 	}
 
 	
@@ -643,6 +722,11 @@ int main()
 
 	glfwTerminate();
 	return 0;
+}
+
+void renderUI(bool &show_demo_window,bool &show_another_window)
+{
+
 }
 
 unsigned int quadVAO = 0;

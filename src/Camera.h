@@ -120,7 +120,7 @@ public:
 		
 		rotateaxisY = glm::mat3(glm::rotate(mat, glm::radians(modelPitch), glm::vec3(1.0f, 0.0f, 0.0f))) * glm::vec3(0.0f,1.0f,0.0f);
 		rotateaxisX = glm::mat3(glm::rotate(mat, glm::radians(modelYaw), glm::vec3(0.0f, 1.0f, 0.0f))) * glm::vec3(1.0f, 0.0f, 0.0f);
-		std::cout << rotateaxisX.x << " " << rotateaxisX.y << " " << rotateaxisX.z << std::endl;
+		//std::cout << rotateaxisX.x << " " << rotateaxisX.y << " " << rotateaxisX.z << std::endl;
 		 
 		Xoff = xoffset;
 		Yoff = yoffset;
