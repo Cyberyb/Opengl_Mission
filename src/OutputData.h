@@ -19,7 +19,7 @@ void setOutputFormat(int width, int height, int layer)
 void savePixelsToTxt(const vector<unsigned char>&pixels ,std::string pathname,int layer)
 /*void savePixelsToTxt(const unsigned char* pixels, std::string pathname, int layer)*/ {
     // Open the output file
-    if(layer == 0)
+    if(layer == 1)
         std::ofstream outputFile(pathname, ios::trunc);
 
     std::ofstream outputFile(pathname,ios::app);
