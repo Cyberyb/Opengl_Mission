@@ -613,6 +613,8 @@ int main()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glEnable(GL_CULL_FACE);
 		pointsShader.use();
 
 		pointsShader.setMat4("view", view);
@@ -629,7 +631,7 @@ int main()
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//
-
+		glDisable(GL_CULL_FACE);
 
 
 

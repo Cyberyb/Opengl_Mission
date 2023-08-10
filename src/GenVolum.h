@@ -61,24 +61,24 @@ vector<glm::ivec3> GenVolumeIndex(vector<unsigned char>& pixels,unsigned int& co
         {
             
 
-            //生成6个面
+            //生成6个面   逆时针生成以适应面剔除
             //底面
             vp.push_back(glm::vec3(index,     index + 1, index + 2));
-            vp.push_back(glm::vec3(index + 1, index + 2, index + 3));
+            vp.push_back(glm::vec3(index + 1, index + 3, index + 2));
             //顶面
-            vp.push_back(glm::vec3(index + 4, index + 5, index + 6));
+            vp.push_back(glm::vec3(index + 4, index + 6, index + 5));
             vp.push_back(glm::vec3(index + 5, index + 6, index + 7));
             //前面
-            vp.push_back(glm::vec3(index,     index + 1, index + 4));
+            vp.push_back(glm::vec3(index,     index + 4, index + 1));
             vp.push_back(glm::vec3(index + 1, index + 4, index + 5));
             //后面
             vp.push_back(glm::vec3(index + 2, index + 3, index + 6));
-            vp.push_back(glm::vec3(index + 3, index + 6, index + 7));
+            vp.push_back(glm::vec3(index + 3, index + 7, index + 6));
             //左面
             vp.push_back(glm::vec3(index,     index + 2, index + 4));
-            vp.push_back(glm::vec3(index + 2, index + 4, index + 6));
+            vp.push_back(glm::vec3(index + 2, index + 6, index + 4));
             //右面
-            vp.push_back(glm::vec3(index + 1, index + 3, index + 5));
+            vp.push_back(glm::vec3(index + 1, index + 5, index + 3));
             vp.push_back(glm::vec3(index + 3, index + 5, index + 7));
 
 
