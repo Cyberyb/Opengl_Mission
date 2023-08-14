@@ -16,6 +16,8 @@ struct cameraVertex
 class CameraMesh
 {
 public:
+
+    int LightCount = 16;
     //cameraVertex vertices;
     //std::vector<glm::vec3> vertices;
     //std::vector<glm::uvec3> index;
@@ -42,8 +44,35 @@ void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex
     {
         cameraVer.clear();
     }
+
     std::ifstream file(filename);
     std::string line;
+
+    int light_count = 0;
+    if (std::getline(file, line))
+    {
+        std::istringstream iss(line);
+        int count = 0;
+        float tempValue;
+        while (iss >> tempValue) {
+            count++;
+            if (count > 1)
+                break;
+        }
+
+        iss.clear();//清除状态位
+        iss.seekg(0);//将流指针重置到开头
+
+        if (count == 1)
+        {
+            iss >> light_count;;
+            this->LightCount = light_count;
+        }
+        else
+            file.seekg(0);
+    }
+
+
     while (std::getline(file, line))
     {
         std::istringstream iss(line);
