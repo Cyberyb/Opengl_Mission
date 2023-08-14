@@ -37,17 +37,45 @@ vector<glm::vec3> GenVolumePoints(vector<unsigned char>& pixels,int layer,unsign
 
 
             //生成8个点
-            vp.push_back(glm::vec3(x, y, z));
-            vp.push_back(glm::vec3(x+lenwid, y, z));
-            vp.push_back(glm::vec3(x, y, z+lenhei));
-            vp.push_back(glm::vec3(x + lenwid, y, z + lenhei));
-            vp.push_back(glm::vec3(x, y+lenlay, z));
-            vp.push_back(glm::vec3(x + lenwid, y+lenlay, z));
-            vp.push_back(glm::vec3(x, y+lenlay, z + lenhei));
-            vp.push_back(glm::vec3(x+lenwid, y+lenlay, z + lenhei));
+            vp.push_back(glm::vec3(x, y, z));                            
+            vp.push_back(glm::vec3(x+lenwid, y, z)),                     
+            vp.push_back(glm::vec3(x, y, z+lenhei));                     
+            vp.push_back(glm::vec3(x + lenwid, y, z + lenhei));          
+            vp.push_back(glm::vec3(x, y+lenlay, z));                     
+            vp.push_back(glm::vec3(x + lenwid, y+lenlay, z));            
+            vp.push_back(glm::vec3(x, y+lenlay, z + lenhei));            
+            vp.push_back(glm::vec3(x+lenwid, y+lenlay, z + lenhei));     
         }
     }
     return vp;
+}
+
+vector<glm::vec3> GenVolumeNormal(const unsigned int& count)
+{
+    glm::vec3 nor1 = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+    glm::vec3 nor2 = glm::normalize(glm::vec3(1.0f, -1.0f, -1.0f));
+    glm::vec3 nor3 = glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f));
+    glm::vec3 nor4 = glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f));
+    glm::vec3 nor5 = glm::normalize(glm::vec3(-1.0f, 1.0f, -1.0f));
+    glm::vec3 nor6 = glm::normalize(glm::vec3(1.0f, 1.0f, -1.0f));
+    glm::vec3 nor7 = glm::normalize(glm::vec3(-1.0f, 1.0f, 1.0f));
+    glm::vec3 nor8 = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f));
+
+    vector<glm::vec3> vn;
+    //int count = 0;
+    for (int i = 0; i < count; i++) {
+            //float num = i / 4.0;
+            vn.push_back(nor1);
+            vn.push_back(nor2);
+            vn.push_back(nor3);
+            vn.push_back(nor4);
+            vn.push_back(nor5);
+            vn.push_back(nor6);
+            vn.push_back(nor7);
+            vn.push_back(nor8);
+            //生成8个点       
+    }
+    return vn;
 }
 
 

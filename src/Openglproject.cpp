@@ -4,7 +4,9 @@
 //
 //#include<GL/glew.h>
 #include"Shader.h"//因为包含了glad库，需要置顶
+#include<ctime>
 #include <iostream>
+
 #include<GLFW/glfw3.h>
 //#define STB_IMAGE_IMPLEMENTATION
 //#include"SOIL2/stb_image.h"
@@ -13,6 +15,8 @@
 #include<glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -23,6 +27,7 @@
 #include "OutputData.h"
 #include "GenMesh.h"
 #include "GenVolum.h"
+#include "FileDialog.h"
 
 //#define POI_X 64
 //#define POI_Y 64
@@ -112,15 +117,15 @@ void GetDirRightUp(glm::vec3 r,glm::vec3 &dir,glm::vec3 &right,glm::vec3 &up)
 	up = glm::cross(dir, right);
 }
 
-glm::mat4 GetFrustumbyangle(float left, float right, float bottom, float top,float near, float far)
+glm::mat4 GetFrustumbyangle(float left, float right, float bottom, float top,float n, float f)
 {
 	const float PI = 3.1415;
-	float leftC = -near * std::tan(left * PI / 180.0);
-	float rightC = near * std::tan(right * PI / 180.0);
-	float topC = near * std::tan(top * PI / 180.0);
-	float bottomC = -near * std::tan(bottom * PI / 180.0);
+	float leftC = -n * std::tan(left * PI / 180.0);
+	float rightC = n * std::tan(right * PI / 180.0);
+	float topC = n * std::tan(top * PI / 180.0);
+	float bottomC = -n * std::tan(bottom * PI / 180.0);
 	//frustum需要通过near来计算参数
-	return glm::frustum(leftC, rightC, bottomC, topC,near,far);
+	return glm::frustum(leftC, rightC, bottomC, topC,n,f);
 }
 
 //glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
@@ -193,6 +198,8 @@ int main()
 	bool firstRender = true;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	ImVec4 main_color = ImVec4(1.0f, 0.0f, 0.0f, 0.0f);
+	std::string sphere_file;
+	std::string camera_file;
 
 	//注册回调函数
 	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -401,11 +408,13 @@ int main()
 	//准备数据
 	//unsigned int* volumeVAO;
 	vector<unsigned int> volumeVAO;
+	//vector<VBOList> volumeVBO;
 	vector<unsigned int> volumeVBO;
 	vector<unsigned int> volumeEBO;
 
 	vector<unsigned int> points_count;
 	vector<unsigned int> elements_count;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -424,12 +433,14 @@ int main()
 
 		if (firstRender)
 		{
+			double begin = clock();
 			//volumeVAO = new unsigned int[POI_Y];
 			volumeVAO.clear();
 			volumeVBO.clear();
 			volumeEBO.clear();
 			volumeVAO.assign(POI_Y,0);
-			volumeVBO.assign(POI_Y,0);
+			volumeVBO.assign(POI_Y, 0);
+			//volumeVBO.assign(POI_Y, {0,0});
 			volumeEBO.assign(POI_Y,0);
 
 			points_count.clear();
@@ -518,9 +529,15 @@ int main()
 
 			std::vector<glm::vec3> volumePoints;
 			std::vector<glm::ivec3> volumeIndex;
+			std::vector<glm::vec3> volumeNormal;
 
 			glGenVertexArrays(POI_Y, volumeVAO.data());
 			glGenBuffers(POI_Y, volumeVBO.data());
+			//for (int k = 0; k < POI_Y; k++)
+			//{
+			//	glGenBuffers(1, &volumeVBO[k].pVBO);
+			//	glGenBuffers(1, &volumeVBO[k].nVBO);
+			//}
 			glGenBuffers(POI_Y, volumeEBO.data());
 
 
@@ -545,25 +562,42 @@ int main()
 				CullArea_Six(pixels, pixels_down, pixels_up);
 
 				volumePoints = GenVolumePoints(pixels, layer, points_count[layer]);
+				volumeNormal = GenVolumeNormal(points_count[layer]);
 				volumeIndex = GenVolumeIndex(pixels, elements_count[layer]);
 
 				glBindVertexArray(volumeVAO[layer]);
 				glBindBuffer(GL_ARRAY_BUFFER, volumeVBO[layer]);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * volumePoints.size(), volumePoints.data(), GL_STATIC_DRAW);
+				//cout << (sizeof(volumePoints) == (volumePoints.size() * sizeof(glm::vec3) * 3) ? 1 : 0) << endl;
+				//cout << "size()*float*3 : " << volumePoints.size() * sizeof(float) * 3 << "  size()*vec3 : " << volumePoints.size() * sizeof(glm::vec3) << endl;
+				glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * volumePoints.size() + volumeNormal.size()*sizeof(glm::vec3), nullptr, GL_STATIC_DRAW);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, volumePoints.size() * sizeof(glm::vec3), volumePoints.data());
+				glBufferSubData(GL_ARRAY_BUFFER, volumePoints.size() * sizeof(glm::vec3), volumeNormal.size() * sizeof(glm::vec3), volumeNormal.data());
 				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
 				glEnableVertexAttribArray(0);
+				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(volumeNormal.size() * sizeof(glm::vec3)));				
+				glEnableVertexAttribArray(1);
 				glBindBuffer(0, volumeVBO[layer]);
+
+				//glBindBuffer(GL_ARRAY_BUFFER, volumeVBO[layer]);
+				//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * volumePoints.size(), volumePoints.data(), GL_STATIC_DRAW);
+				//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传normal
+				//glEnableVertexAttribArray(1);
+				//glBindBuffer(0, volumeVBO[layer]);
+				
 
 
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, volumeEBO[layer]);
 				glBufferData(GL_ELEMENT_ARRAY_BUFFER, volumeIndex.size() * 3 * sizeof(unsigned int), volumeIndex.data(), GL_STATIC_DRAW);
 
-				savePixelsToTxt(pixels, "matchPoints.txt", layer);
+				//savePixelsToTxt(pixels, "matchPoints.txt", layer);
 			}
 			firstRender = false;
 			glDeleteFramebuffers(POI_Y, visiMapFBO);
 			delete[] visiMap;
 			delete[] visiMapFBO;
+			double end = clock();
+			double duration = end - begin;
+			std::cout << "Complete! Time takes "<<duration<<" ms" << endl;
 		}
 		
 
@@ -673,7 +707,7 @@ int main()
 			//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3((const char*)u8"主体颜色", (float*)&main_color); // Edit 3 floats representing a color
 
-			ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 128);
+			ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 1024);
 			if (ImGui::Button((const char*)u8"重置大小"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
 				POI_X = size;
@@ -681,7 +715,17 @@ int main()
 				POI_Z = size;
 				firstRender = true;
 			}
+			if (ImGui::Button((const char*)u8"选择球幕文件"))
+			{
+				sphere_file = FileDlg::GetFileDialog();				
+			}
+			ImGui::Text(sphere_file.c_str());
+			if (ImGui::Button((const char*)u8"选择摄像机文件"))
+			{
+				camera_file = FileDlg::GetFileDialog();				
+			}
 
+			ImGui::Text(camera_file.c_str());
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
 		}
@@ -727,6 +771,11 @@ int main()
 	glDeleteBuffers(1, &VBO[1]);
 	glDeleteBuffers(1, &EBO);
 	glDeleteVertexArrays(POI_Y, volumeVAO.data());
+	//for (int k = 0; k < POI_Y; k++)
+	//{
+	//	glDeleteBuffers(1, &volumeVBO[k].pVBO);
+	//	glDeleteBuffers(1, &volumeVBO[k].nVBO);
+	//}
 	glDeleteBuffers(POI_Y, volumeVBO.data());
 	//delete[] volumeVAO;
 	//delete[] volumeVBO;
