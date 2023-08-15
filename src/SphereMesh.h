@@ -18,12 +18,19 @@ public:
     int Row = 101;
     int Col = 51;
 
+    unsigned int VAO;
+    unsigned int VBO;
+    unsigned int EBO;
+
 	//Vertex vertices;
     std::vector<glm::vec3> vertices;
     std::vector<glm::uvec3> index;
 	SphereMesh(const std::string& filename);
+    ~SphereMesh();
     std::vector<glm::vec3> readMeshPos(const std::string &filename);
     std::vector<glm::uvec3> GenerateIndex(int row,int col);
+    void Bind();
+    void ReBuid(const std::string& filename);
 private:
 };
 
@@ -32,6 +39,19 @@ SphereMesh::SphereMesh(const std::string& filename)
     std::vector<glm::vec3> vertices = readMeshPos(filename);
     this->index = GenerateIndex(Row,Col);
     this->vertices = vertices;
+}
+
+SphereMesh::~SphereMesh()
+{
+    glDeleteBuffers(1, &(this->VBO));
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &EBO);
+}
+
+void SphereMesh::ReBuid(const std::string& filename)
+{
+    this->vertices = readMeshPos(filename);
+    this->index = GenerateIndex(Row, Col);
 }
 
 std::vector<glm::vec3> SphereMesh::readMeshPos(const std::string& filename) 
@@ -113,4 +133,29 @@ std::vector<glm::uvec3> SphereMesh::GenerateIndex(const int row,const int col)
     }
 
     return outPos;
+}
+
+void SphereMesh::Bind()
+{
+    //生成对应对象
+    glGenVertexArrays(1, &this->VAO);
+    glGenBuffers(1, &this->VBO);//球幕VBO
+    glGenBuffers(1, &this->EBO);
+
+    //绑定VAO
+    glBindVertexArray(this->VAO);
+    //绑定VBO并传入数据
+    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * this->vertices.size(), this->vertices.data(), GL_STATIC_DRAW);
+    //绑定EBO并传入数据
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glm::uvec3) * this->index.size(), this->index.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Normal
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(0, this->VBO);
+    glBindBuffer(0, this->EBO);
 }

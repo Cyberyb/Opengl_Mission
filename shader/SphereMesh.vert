@@ -8,8 +8,10 @@ out vec3 Normal;
 out vec3 FragPos;
 uniform int count;
 uniform mat4 model;
-uniform mat4 view[16];
-uniform mat4 proj[16];
+
+//由于无法创建动态大小数组，所以直接分配100大小
+uniform mat4 view[100];
+uniform mat4 proj[100];
 
 uniform int free;
 uniform mat4 camera_view;

@@ -50,6 +50,60 @@ void renderQuad();
 void renderUI(bool& show_demo_window, bool& show_another_window);
 void RenderData(int x,int y,int z);
 
+void LoadSphereAndLight(SphereMesh& sphereM,CameraMesh& cameraM,Shader& sphereShader,Shader& quardShader)
+{
+
+	//读取文件
+	//SphereMesh sphereM(Sphere);
+	//CameraMesh cameraM(Light);
+	//球幕顶点以及索引
+	std::vector<glm::vec3> vert = sphereM.vertices;
+	std::vector<glm::uvec3> index = sphereM.index;
+	//光源摄像机对象
+	std::vector<cameraVertex> cameraVert = cameraM.cameraVer;
+
+	//提前计算多个光源摄像机的变换矩阵
+	vector<glm::mat4> worldtoview = cameraM.CalWorld2View();
+
+
+	//提前计算多个光源摄像机的Frustum
+	vector<glm::mat4> allfrustum = cameraM.CalFrustum();
+
+	quardShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(quardShader.ID, "view"), cameraVert.size(), GL_FALSE, &worldtoview[0][0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(quardShader.ID, "proj"), cameraVert.size(), GL_FALSE, &allfrustum[0][0][0]);
+	sphereShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "view"), cameraVert.size(), GL_FALSE, &worldtoview[0][0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "proj"), cameraVert.size(), GL_FALSE, &allfrustum[0][0][0]);
+
+	sphereM.Bind();
+	cameraM.Bind();
+
+	/*---------------------------深度贴图------------------------------*/
+	cameraM.CreateDepthMap();
+
+	glm::mat4 model = glm::mat4(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
+	sphereShader.use();
+	sphereShader.setMat4("model", model);
+	sphereShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//用于一点点diffuse光照
+	for (int i = 0; i < 16; i++)
+	{
+		sphereShader.setInt("count", i);
+		glViewport(0, 0, 1280,720);
+		glBindFramebuffer(GL_FRAMEBUFFER, cameraM.depthFBO[i]);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(sphereM.VAO);
+
+		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+}
+
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
@@ -83,7 +137,8 @@ static void glfw_error_callback(int error, const char* description)
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-
+SphereMesh sphereM("mesh.txt");
+CameraMesh cameraM("light.txt");
 
 
 int main()
@@ -127,10 +182,12 @@ int main()
 	bool linemode_Main = false;
 	bool render_Sphere = true;
 	bool firstRender = true;
+	int render_count = 0;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	ImVec4 main_color = ImVec4(1.0f, 0.0f, 0.0f, 0.0f);
-	std::string sphere_file;
-	std::string camera_file;
+	std::string sphere_file("E:\\OpenGL\\Code\\Opengl_Mission\\mesh.txt");
+	std::string camera_file("E:\\OpenGL\\Code\\Opengl_Mission\\light.txt");
+	bool Calspherecamera = true;
 
 	//注册回调函数
 	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -155,182 +212,13 @@ int main()
 	Shader depthShader("./shader/DepthShader.vert", "./shader/DepthShader.frag");
 	Shader QuardShader("./shader/Quard.vert", "./shader/Quard.frag");
 	
-	//获取Mesh
-	SphereMesh sphereM("mesh.txt");
-	CameraMesh cameraM("light.txt");
-	//PointsMesh pointsM("box.txt");
+	//SphereMesh sphereM("mesh.txt");
+	//CameraMesh cameraM("light.txt");
+	LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
 
-	std::vector<glm::vec3> vert = sphereM.vertices;
-	std::vector<glm::uvec3> index = sphereM.index;
-
-	std::vector<glm::vec3> camerapos = cameraM.GetCameraPos();
-	std::vector<glm::vec3> camerarot = cameraM.GetCameraRot();
-	std::vector<glm::vec4> camerafru = cameraM.GetCameraFru();
-	std::vector<cameraVertex> cameraVert = cameraM.cameraVer;
-
-	//std::vector<glm::vec3> pointsvert = pointsM.points;
-
-
-	//输出测试
-
-	//16:摄像机个数 vector的当前容量 16:vector的size?   12:vec3  3*4
-	//std::cout << camerapos.size() << " " << sizeof(camerapos) << " " << sizeof(camerapos[0]) << std::endl;
-	//std::cout << cameraVert.data()->camerafru.x << endl;
-
-
-	//提前计算16个摄像机的变换矩阵
-	vector<glm::mat4> worldtoview;
-	for (int k = 0; k < cameraVert.size(); k++) {
-		glm::vec3 r = camerarot[k];
-		glm::vec3 camera = camerapos[k];
-
-		//方法一：使用自定义的viewMatrix函数（有问题，生成的View矩阵第一三行符号相反）
-		//glm::mat4 worldToView = viewMatrix(-camera, r);
-
-		//方法二：计算lookAt矩阵（正确的，中肯的）
-		glm::vec3 dir, right, up;
-		Utility::GetDirRightUp(camerarot[k], dir, right, up);
-		glm::mat4 worldToView = glm::lookAt(camerapos[k], camerapos[k] + dir, up);
-		worldtoview.push_back(worldToView);
-	}
-
-	//提前计算16个摄像机的Frustum
-	vector<glm::mat4> allfrustum;
-	for (int j = 0; j < cameraVert.size(); j++) {
-		glm::mat4 fru = Utility::GetFrustumbyangle(camerafru[j].x, camerafru[j].y, camerafru[j].w, camerafru[j].z, 0.1f, 100.0f);
-		allfrustum.push_back(fru);
-	}
-
-	//glm::mat4 fru = GetFrustumbyangle(camerafru[0].x, camerafru[0].y, camerafru[0].w, camerafru[0].z, 0.1f, 100.0f);
-	QuardShader.use();
-	glUniformMatrix4fv(glGetUniformLocation(QuardShader.ID, "view"), 16, GL_FALSE, &worldtoview[0][0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(QuardShader.ID, "proj"), 16, GL_FALSE, &allfrustum[0][0][0]);
-	sphereShader.use();
-	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "view"), 16, GL_FALSE, &worldtoview[0][0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "proj"), 16, GL_FALSE, &allfrustum[0][0][0]);
-
-	/*球幕Mesh*/
-	unsigned int VBO[3], VAO, EBO;//创建顶点缓冲对象、顶点数组对象
-	//生成对应对象
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO[0]);//球幕VBO
-	glGenBuffers(1, &VBO[1]);//摄像机VBO
-	//glGenBuffers(1, &VBO[2]);
-	glGenBuffers(1, &EBO);
-
-	//绑定VAO
-	glBindVertexArray(VAO);
-	//绑定VBO并传入数据
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * vert.size(), vert.data(), GL_STATIC_DRAW);
-	//绑定EBO并传入数据
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 30000 * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
-
-	//位置属性
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Normal
-	glEnableVertexAttribArray(1);
-
-
-	unsigned int cameraVAO;
-	glGenVertexArrays(1, &cameraVAO);
-	glBindVertexArray(cameraVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 10 * cameraVert.size(), cameraVert.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)0);//传Position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(3 * sizeof(float)));//传Rot
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));//传Fru
-	glEnableVertexAttribArray(2);
-
-	//unsigned int pointsVAO;
-	//glGenVertexArrays(1, &pointsVAO);
-	//glBindVertexArray(pointsVAO);
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-	//glEnableVertexAttribArray(0);
 	
-
-	//sphereShader.use();
-
-	/*---------------------------深度贴图------------------------------*/
-	unsigned int depthMapFBO[16];//创建帧缓冲
-	for (int fboC = 0; fboC < 16; fboC++)
-	{
-		glGenFramebuffers(1, &depthMapFBO[fboC]);
-	}
-
-	// create depth texture
-	unsigned int depthMap[16];//创建深度贴图
-	for (int dmpC = 0; dmpC < 16; dmpC++)
-	{
-		glGenTextures(1, &depthMap[dmpC]);
-		glBindTexture(GL_TEXTURE_2D, depthMap[dmpC]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[dmpC]);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[dmpC], 0);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-			cout << "Framebuffer complete!" << endl;
-		else
-			cout << "Framebuffer not complete! " << endl;
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	// attach depth texture as FBO's depth buffer 将深度贴图与帧缓冲绑定
+	
 	glm::mat4 model = glm::mat4(1.0f);
-	glEnable(GL_DEPTH_TEST);
-	/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
-	sphereShader.use();
-	sphereShader.setMat4("model", model);
-	sphereShader.setVec3("lightPos", lightposition);//用于一点点diffuse光照
-	for (int i = 0; i < 16; i++)
-	{
-		sphereShader.setInt("count", i);
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
-		glBindVertexArray(VAO);
-
-		glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	
-
-	//glDrawBuffer(GL_NONE);
-	//glReadBuffer(GL_NONE);
-
-
-
-	
-	//cout << "points counts" << pointSeq.size() << endl;
-
-	//获取处理后的点数据，绑定VAO、VBO
-	//PointsMesh pointsM("matchPoints.txt");
-	//std::vector<glm::vec3> pointsvert = pointsM.points;
-
-	//unsigned int pointsVAO;
-	//glGenVertexArrays(1, &pointsVAO);
-	//glBindVertexArray(pointsVAO);
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * pointsvert.size(), pointsvert.data(), GL_STATIC_DRAW);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//传Position
-	//glEnableVertexAttribArray(0);
-
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	//glEnable(GL_BLEND);
@@ -361,6 +249,7 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
 
 		if (firstRender)
 		{
@@ -441,7 +330,7 @@ int main()
 			for (int i = 0; i < 16; i++)
 			{
 				glActiveTexture(GL_TEXTURE0 + i);
-				glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+				glBindTexture(GL_TEXTURE_2D, cameraM.depthFBO[i]);
 			}
 
 			//逐层渲染
@@ -553,9 +442,9 @@ int main()
 		sphereShader.setMat4("model", model);
 		sphereShader.setVec3("lightPos", lightposition);
 
-		glBindVertexArray(VAO);
+		glBindVertexArray(sphereM.VAO);
 		if(render_Sphere)
-			glDrawElements(GL_TRIANGLES, vert.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+			glDrawElements(GL_TRIANGLES, sphereM.vertices.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		/*----------------画摄像机-----------------*/
 
@@ -569,9 +458,9 @@ int main()
 		cameraShader.setMat4("model", model);
 
 
-		glBindVertexArray(cameraVAO);
+		glBindVertexArray(cameraM.VAO);
 		glPointSize(20.0f);
-		glDrawArrays(GL_POINTS, 0, cameraVert.size());
+		glDrawArrays(GL_POINTS, 0, cameraM.cameraVer.size());
 
 		/*----------------画采样点-----------------*/
 		if (linemode_Main)
@@ -655,8 +544,20 @@ int main()
 			{
 				camera_file = FileDlg::GetFileDialog();				
 			}
-
 			ImGui::Text(camera_file.c_str());
+			if (ImGui::Button((const char*)u8"计算"))
+			{
+				sphereM.ReBuid(sphere_file);
+				cameraM.ReBuid(camera_file);
+				glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
+				LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
+				firstRender = true;
+				//size = 16;
+				//POI_X = 16;
+				//POI_Y = 16;
+				//POI_Z = 16;
+			}
+
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
 		}
@@ -696,18 +597,15 @@ int main()
 	//else
 	//	cout << "Failed" << endl;
 
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteVertexArrays(1, &cameraVAO);
-	glDeleteBuffers(1, &VBO[0]);
-	glDeleteBuffers(1, &VBO[1]);
-	glDeleteBuffers(1, &EBO);
-	glDeleteVertexArrays(POI_Y, volumeVAO.data());
+
 	//for (int k = 0; k < POI_Y; k++)
 	//{
 	//	glDeleteBuffers(1, &volumeVBO[k].pVBO);
 	//	glDeleteBuffers(1, &volumeVBO[k].nVBO);
 	//}
+	glDeleteVertexArrays(POI_Y, volumeVAO.data());
 	glDeleteBuffers(POI_Y, volumeVBO.data());
+	glDeleteBuffers(POI_Y, volumeEBO.data());
 	//delete[] volumeVAO;
 	//delete[] volumeVBO;
 	//delete[] volumeEBO;
