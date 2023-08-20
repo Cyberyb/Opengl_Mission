@@ -11,6 +11,8 @@ uniform mat4 view[16];
 uniform mat4 proj[16];
 uniform int count;
 uniform int layer;
+uniform float radius;
+uniform float sidelength;
 
 uniform int row;
 uniform int col;
@@ -35,9 +37,9 @@ void main()
     //float wx = mod(gl_FragCoord.x,col) * (5.5/row) + (-2.75);
     //float wz = floor(gl_FragCoord.x/row) * (5.5/col) + (-2.75);
     //float wy = gl_FragCoord.y * 0.11 + (-2.75);
-    float wx = gl_FragCoord.x *(5.5/row) + (-2.75);
-    float wz = gl_FragCoord.y * (5.5/col) + (-2.75);
-    float wy = layer * (5.5/hei) + (-2.75);//根据当前层数计算y值
+    float wx = gl_FragCoord.x *(sidelength/row) + (-sidelength/2.0);
+    float wz = gl_FragCoord.y * (sidelength/col) + (-sidelength/2.0);
+    float wy = layer * (sidelength/hei) + (-sidelength/2.0);//根据当前层数计算y值
     vec3 worldpos = vec3(wx,wy,wz);//根据贴图位置计算每个点的世界坐标
 
     for(int i = 0; i < 16; i++)
@@ -79,7 +81,7 @@ void main()
         FragColor = vec4(0.0,0.0,0.0,0.0);
 
         //球外完全剔除，按照半径
-    if(length(worldpos)>2.75)
+    if(length(worldpos)>radius)
         FragColor = vec4(0.0,0.0,0.0,0.0);
 
     //if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)

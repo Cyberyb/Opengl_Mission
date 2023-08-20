@@ -41,6 +41,7 @@
     <ClInclude Include="src\GenVolum.h" />
     <ClInclude Include="src\OutputData.h" />
     <ClInclude Include="src\PointsMesh.h" />
+    <ClInclude Include="src\RecentFile.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\SphereMesh.h" />
     <ClInclude Include="src\Utility.h" />
@@ -58,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="Recent.json" />
     <None Include="shader\CameraMesh.frag" />
     <None Include="shader\CameraMesh.vert" />
     <None Include="shader\DepthShader.frag" />

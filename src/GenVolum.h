@@ -12,14 +12,16 @@ static int LAY_V = 64;
 static float lenwid = 5.5 / WID_V;
 static float lenhei = 5.5 / HEI_V;
 static float lenlay = 5.5 / LAY_V;
-void setFormat_v(int width, int height, int layer)
+static float startpos = -2.75;
+void setFormat_v(int width, int height, int layer, float sidelength)
 {
 	WID_V = width;
 	HEI_V = height;
 	LAY_V = layer;
-    lenwid = 5.5 / WID_V;
-    lenhei = 5.5 / HEI_V;
-    lenlay = 5.5 / LAY_V;
+    lenwid = sidelength / WID_V;
+    lenhei = sidelength / HEI_V;
+    lenlay = sidelength / LAY_V;
+    startpos = -sidelength/2.0;
 }
 
 vector<glm::vec3> GenVolumePoints(vector<unsigned char>& pixels,int layer,unsigned int &count)
@@ -31,9 +33,13 @@ vector<glm::vec3> GenVolumePoints(vector<unsigned char>& pixels,int layer,unsign
         {
             count++;
             //float num = i / 4.0;
-            float x = (i % WID_V) * (5.5 / WID_V) + (-2.75);
-            float y = layer * (5.5 / LAY_V) + (-2.75);
-            float z = (i / HEI_V) * (5.5 / HEI_V) + (-2.75);
+            //float x = (i % WID_V) * (5.5 / WID_V) + (-2.75);
+            //float y = layer * (5.5 / LAY_V) + (-2.75);
+            //float z = (i / HEI_V) * (5.5 / HEI_V) + (-2.75);
+
+            float x = (i % WID_V) * lenwid + startpos;
+            float y = layer * lenlay + startpos;
+            float z = (i / HEI_V) * lenhei + startpos;
 
 
             //生成8个点

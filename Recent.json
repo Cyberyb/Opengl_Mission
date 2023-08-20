@@ -1,0 +1,14 @@
+{
+	"attach" : 
+	{
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\light2.txt"
+	},
+	"light" : 
+	{
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\light.txt"
+	},
+	"sphere" : 
+	{
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\mesh.txt"
+	}
+}

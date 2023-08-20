@@ -29,6 +29,7 @@
 #include "GenVolum.h"
 #include "FileDialog.h"
 #include "Utility.h"
+#include "RecentFile.h"
 
 //#define POI_X 64
 //#define POI_Y 64
@@ -50,7 +51,45 @@ void renderQuad();
 void renderUI(bool& show_demo_window, bool& show_another_window);
 void RenderData(int x,int y,int z);
 
-void LoadSphereAndLight(SphereMesh& sphereM,CameraMesh& cameraM,Shader& sphereShader,Shader& quardShader)
+
+
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
+
+const unsigned int VISI_WIDTH = 2500;
+const unsigned int VISI_HEIGHT = 50;
+
+int POI_X = 16;
+int POI_Y = 16;
+int POI_Z = 16;
+
+const unsigned int POI_WIDTH = 50;
+const unsigned int POI_HEIGHT = 50;
+
+float fov = 60.0f;
+float yaw = 90.0f;//设置偏航角
+float pitch = 0.0f;//设置俯仰角
+bool firstmouse = true;//判断鼠标是否初次进入画面
+double lastX = (float)SCR_WIDTH / 2;//设置上一帧鼠标位置，默认为平面中央
+double lastY = (float)SCR_HEIGHT / 2;
+
+//时间用于设置鼠标在每一帧的位置变化属性
+float deltatime = 0.0f;
+float lasttime = 0.0f;
+
+glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//摄像机位置
+glm::vec3 lightposition = glm::vec3(5.0, 5.0, 5.0);
+Camera camera(cameraposition);
+
+static void glfw_error_callback(int error, const char* description)
+{
+	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
+SphereMesh sphereM(RecentFile::GetRecentSphere());
+CameraMesh cameraM(RecentFile::GetRecentLight());
+
+void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& sphereShader, Shader& quardShader)
 {
 
 	//读取文件
@@ -88,10 +127,10 @@ void LoadSphereAndLight(SphereMesh& sphereM,CameraMesh& cameraM,Shader& sphereSh
 	sphereShader.use();
 	sphereShader.setMat4("model", model);
 	sphereShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//用于一点点diffuse光照
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < cameraVert.size(); i++)
 	{
 		sphereShader.setInt("count", i);
-		glViewport(0, 0, 1280,720);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, cameraM.depthFBO[i]);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -103,42 +142,6 @@ void LoadSphereAndLight(SphereMesh& sphereM,CameraMesh& cameraM,Shader& sphereSh
 	}
 
 }
-
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
-
-const unsigned int VISI_WIDTH = 2500;
-const unsigned int VISI_HEIGHT = 50;
-
-int POI_X = 16;
-int POI_Y = 16;
-int POI_Z = 16;
-
-const unsigned int POI_WIDTH = 50;
-const unsigned int POI_HEIGHT = 50;
-
-float fov = 60.0f;
-float yaw = 90.0f;//设置偏航角
-float pitch = 0.0f;//设置俯仰角
-bool firstmouse = true;//判断鼠标是否初次进入画面
-double lastX = (float)SCR_WIDTH / 2;//设置上一帧鼠标位置，默认为平面中央
-double lastY = (float)SCR_HEIGHT / 2;
-
-//时间用于设置鼠标在每一帧的位置变化属性
-float deltatime = 0.0f;
-float lasttime = 0.0f;
-
-glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//摄像机位置
-glm::vec3 lightposition = glm::vec3(5.0, 5.0, 5.0);
-Camera camera(cameraposition);
-
-static void glfw_error_callback(int error, const char* description)
-{
-	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
-}
-
-SphereMesh sphereM("mesh.txt");
-CameraMesh cameraM("light.txt");
 
 
 int main()
@@ -185,8 +188,9 @@ int main()
 	int render_count = 0;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	ImVec4 main_color = ImVec4(1.0f, 0.0f, 0.0f, 0.0f);
-	std::string sphere_file("E:\\OpenGL\\Code\\Opengl_Mission\\mesh.txt");
-	std::string camera_file("E:\\OpenGL\\Code\\Opengl_Mission\\light.txt");
+	float points_side_length = 5.5;
+	std::string sphere_file(RecentFile::GetRecentSphere());
+	std::string camera_file(RecentFile::GetRecentLight());
 	bool Calspherecamera = true;
 
 	//注册回调函数
@@ -323,6 +327,8 @@ int main()
 			QuardShader.setInt("row", POI_X);
 			QuardShader.setInt("col", POI_Z);
 			QuardShader.setInt("hei", POI_Y);
+			QuardShader.setFloat("radius", sphereM.Radius);
+			QuardShader.setFloat("sidelength", points_side_length);
 			//QuardShader.setInt("floors",);
 			GLint texIndex[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
 			glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16, texIndex);
@@ -337,6 +343,7 @@ int main()
 			for (int layer = 0; layer < POI_Y; layer++)
 			{
 				QuardShader.setInt("layer", layer);
+				
 				glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[layer]);
 				glClear(GL_COLOR_BUFFER_BIT);
 				renderQuad();
@@ -362,7 +369,7 @@ int main()
 
 
 			int textureWidth;
-			setFormat_v(POI_X, POI_Y, POI_Z);
+			setFormat_v(POI_X, POI_Y, POI_Z, points_side_length);
 			setFormat(POI_X, POI_Y, POI_Z);
 			for (int layer = 1; layer < POI_Y - 1; layer++)
 			{
@@ -517,7 +524,7 @@ int main()
 			static int size = POI_Y;
 
 			ImGui::Begin((const char*)u8"设置");                          // Create a window called "Hello, world!" and append into it.
-
+			ImGui::Text((const char*)u8"当前球幕网格半径：%.3f",sphereM.Radius);
 
 			ImGui::Checkbox((const char*)u8"球幕显示", &render_Sphere);
 			//ImGui::Text((const char*)u8"是否启用线框模式");               // Display some text (you can use a format strings too)
@@ -526,7 +533,7 @@ int main()
 
 			//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3((const char*)u8"主体颜色", (float*)&main_color); // Edit 3 floats representing a color
-
+			ImGui::SliderFloat((const char*)u8"设定计算点云的边长", &points_side_length, 5.0, 8.0);
 			ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 1024);
 			if (ImGui::Button((const char*)u8"重置大小"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
@@ -549,6 +556,7 @@ int main()
 			{
 				sphereM.ReBuid(sphere_file);
 				cameraM.ReBuid(camera_file);
+				//这一步非常关键，需要删除之前的FBO
 				glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
 				LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
 				firstRender = true;
@@ -556,6 +564,8 @@ int main()
 				//POI_X = 16;
 				//POI_Y = 16;
 				//POI_Z = 16;
+
+				RecentFile::refreshRecent(sphere_file, camera_file);
 			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
