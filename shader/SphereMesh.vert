@@ -9,9 +9,9 @@ out vec3 FragPos;
 uniform int count;
 uniform mat4 model;
 
-//由于无法创建动态大小数组，所以直接分配100大小
-uniform mat4 view[100];
-uniform mat4 proj[100];
+//由于无法创建动态大小数组，所以直接分配32大小，最大支持纹理为32
+uniform mat4 view[32];
+uniform mat4 proj[32];
 
 uniform int free;
 uniform mat4 camera_view;

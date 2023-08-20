@@ -3,16 +3,17 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D depthMap[16];
+uniform sampler2D depthMap[32];
 uniform int floors;
 
 uniform mat4 model;
-uniform mat4 view[16];
-uniform mat4 proj[16];
+uniform mat4 view[32];
+uniform mat4 proj[32];
 uniform int count;
 uniform int layer;
 uniform float radius;
 uniform float sidelength;
+uniform int sizeOfDep;
 
 uniform int row;
 uniform int col;
@@ -42,7 +43,7 @@ void main()
     float wy = layer * (sidelength/hei) + (-sidelength/2.0);//根据当前层数计算y值
     vec3 worldpos = vec3(wx,wy,wz);//根据贴图位置计算每个点的世界坐标
 
-    for(int i = 0; i < 16; i++)
+    for(int i = 0; i < sizeOfDep; i++)
     {
         vec4 pos = proj[i] * view[i] * model * vec4(worldpos,1.0);//获取每个摄像机视野内点的裁剪视图
         pos.xyz /= pos.w;//做透视除法
@@ -75,7 +76,7 @@ void main()
     
 
 
-    if(flag == 16)
+    if(flag == sizeOfDep)
         FragColor = vec4(1.0,1.0,1.0,1.0);
     else
         FragColor = vec4(0.0,0.0,0.0,0.0);

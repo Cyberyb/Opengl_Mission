@@ -221,7 +221,6 @@ int main()
 	LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
 
 	
-	
 	glm::mat4 model = glm::mat4(1.0f);
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
@@ -329,11 +328,18 @@ int main()
 			QuardShader.setInt("hei", POI_Y);
 			QuardShader.setFloat("radius", sphereM.Radius);
 			QuardShader.setFloat("sidelength", points_side_length);
+			QuardShader.setInt("sizeOfDep", cameraM.cameraVer.size());
 			//QuardShader.setInt("floors",);
-			GLint texIndex[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
-			glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), 16, texIndex);
 
-			for (int i = 0; i < 16; i++)
+			vector<GLint> texIndex;
+			for (int i = 0; i < cameraM.cameraVer.size(); i++)
+			{
+				texIndex.push_back(i);
+			}
+			//GLint texIndex[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
+			glUniform1iv(glGetUniformLocation(QuardShader.ID, "depthMap"), cameraM.cameraVer.size(), texIndex.data());
+
+			for (int i = 0; i < cameraM.cameraVer.size(); i++)
 			{
 				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(GL_TEXTURE_2D, cameraM.depthFBO[i]);
@@ -347,8 +353,7 @@ int main()
 				glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[layer]);
 				glClear(GL_COLOR_BUFFER_BIT);
 				renderQuad();
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);				
 			}
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 			/*--------------输出模块/挖空算法/网格点结构体生成/网格索引生成---------------*/
