@@ -4,10 +4,10 @@
 #include <fstream>
 namespace RecentFile
 {
-    std::string recordFileName = "Recent.json";
-    std::string defaultSphere = "mesh.txt";
-    std::string defaultLight = "light.txt";
-    std::string defaultAttach = "mesh2.txt";
+    std::string recordFileName = "./Recent.json";
+    std::string defaultSphere = "./mesh.txt";
+    std::string defaultLight = "./light.txt";
+    std::string defaultAttach = "./mesh2.txt";
 
     Json::Value root;
 
@@ -66,13 +66,13 @@ namespace RecentFile
         root["sphere"]["path"] = sp;
         root["light"]["path"] = lt;
         std::unique_ptr<Json::StreamWriter> writer(jsonWriter.newStreamWriter());
-        std::ofstream recordOutputFile(recordFileName);
+        std::ofstream recordOutputFile(recordFileName, std::ios::binary);
         if (!recordOutputFile.is_open()) {
             std::cout << "无法写入 JSON 文件" << std::endl;
         }
         writer->write(root, &recordOutputFile);
         recordOutputFile.close();
-        std::cout << "已更新 JSON 文件" << std::endl;
+        std::cout << (const char*)u8"已更新 JSON 文件" << std::endl;
     }
 
     std::string GetRecentAttach()

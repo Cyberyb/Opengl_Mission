@@ -83,6 +83,7 @@ void CameraMesh::ReBuid(const std::string& filename)
 
 void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex>& cameraVer)
 {
+    std::locale::global(std::locale("en_US.UTF-8"));
     if (!cameraVer.empty())
     {
         cameraVer.clear();

@@ -1,0 +1,14 @@
+{
+	"attach" : 
+	{
+		"path" : ""
+	},
+	"light" : 
+	{
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\temp\\temp\\\u65b9\u68482\\tempLight.light"
+	},
+	"sphere" : 
+	{
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\temp\\temp\\\u65b9\u68482\\240-115mesh.mesh"
+	}
+}

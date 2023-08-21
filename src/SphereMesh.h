@@ -58,6 +58,7 @@ void SphereMesh::ReBuid(const std::string& filename)
 
 std::vector<glm::vec3> SphereMesh::readMeshPos(const std::string& filename) 
 {
+    std::locale::global(std::locale("en_US.UTF-8"));
     std::vector<glm::vec3> outPos;
 	std::ifstream file(filename);
     std::string line;
