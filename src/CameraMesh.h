@@ -54,24 +54,31 @@ CameraMesh::CameraMesh(const std::string& filename)
     this->camerapos = GetCameraPos();
     this->camerarot = GetCameraRot();
     this->camerafru = GetCameraFru();
+
+    this->LightCount = this->cameraVer.size();
+
+    this->depthFBO.assign(32, 0);
+    this->depthMap.assign(32, 0);
 }
 
 CameraMesh::~CameraMesh()
 {
     glDeleteBuffers(1, &(this->VBO));
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &(this->VAO));
     for(int i = 0;i<cameraVer.size();i++)
         glDeleteFramebuffers(1, &depthFBO[i]);
 }
 
 void CameraMesh::ReBuid(const std::string& filename)
 {
+    //CameraMesh::~CameraMesh();
+    //CameraMesh::CameraMesh(filename);
     this->file = filename;
     readCameraMesh(filename, this->cameraVer);
-
     this->camerapos = GetCameraPos();
     this->camerarot = GetCameraRot();
     this->camerafru = GetCameraFru();
+    this->LightCount = this->cameraVer.size();
 }
 
 void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex>& cameraVer)
@@ -112,8 +119,8 @@ void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex
     while (std::getline(file, line))
     {
         std::istringstream iss(line);
-        float px, py, pz, rx, ry, rz, fleft, fright, fup, fdown;
-        if (!(iss >> px >> py >> pz >> rx >> ry >> rz >> fleft >> fright >> fup >> fdown))
+        float px, py, pz, rx, ry, rz, fleft, fright, fup, fdown,temp1,temp2;
+        if (!(iss >> px >> py >> pz >> rx >> ry >> rz >> fleft >> fright >> fup >> fdown >> temp1 >> temp2))
         {
             std::cout << "Reading End" << std::endl;
             break;
@@ -183,6 +190,8 @@ void CameraMesh::Bind()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));//´«Fru
     glEnableVertexAttribArray(2);
+
+    glBindBuffer(0, this->VBO);
 }
 
 vector<glm::mat4> CameraMesh::CalWorld2View()
@@ -224,15 +233,19 @@ void CameraMesh::CreateDepthMap()
     int mapsize = cameraVer.size();
     this->depthFBO.clear();
     this->depthMap.clear();
-    this->depthFBO.assign(mapsize, 0);
-    this->depthMap.assign(mapsize, 0);
+    //this->depthFBO.shrink_to_fit();
+    //this->depthMap.shrink_to_fit();
+    this->depthFBO.assign(32, 0);
+    this->depthMap.assign(32, 0);
 
-    glGenFramebuffers(mapsize, this->depthFBO.data());
+    //glDeleteFramebuffers(mapsize, this->depthFBO.data());
+    //glDeleteTextures(mapsize, this->depthMap.data());
 
-    for (int dmpC = 0; dmpC < mapsize; dmpC++)
+    glGenFramebuffers(32, this->depthFBO.data());
+    glGenTextures(32, this->depthMap.data());
+    for (int dmpC = 0; dmpC < 32; dmpC++)
     {
-        glGenTextures(1, &depthMap[dmpC]);
-        glBindTexture(GL_TEXTURE_2D, depthMap[dmpC]);
+        glBindTexture(GL_TEXTURE_2D, this->depthMap[dmpC]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1280, 720, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -241,7 +254,7 @@ void CameraMesh::CreateDepthMap()
 
         glBindFramebuffer(GL_FRAMEBUFFER, this->depthFBO[dmpC]);
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[dmpC], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->depthMap[dmpC], 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
             cout << "Framebuffer complete!" << endl;

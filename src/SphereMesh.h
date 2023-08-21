@@ -87,24 +87,26 @@ std::vector<glm::vec3> SphereMesh::readMeshPos(const std::string& filename)
 
 
     float maxlength = 0;
+    //int co = 0;
     while (std::getline(file, line))
     {
         std::istringstream iss(line);
         float x, y, z;
-        
+
         if (!(iss >> x >> y >> z))
         {
-            std::cout << "Reading End" << std::endl;
-            if (glm::length(glm::vec3(x,y,z)) > maxlength)
-            {
-                maxlength = glm::length(glm::vec3(x, y, z));
-            }
+            std::cout << "Sphere Reading End" << std::endl;
             break;
+        }
+        if (glm::length(glm::vec3(x, y, z)) > maxlength)
+        {
+            maxlength = glm::length(glm::vec3(x, y, z));
         }
         outPos.emplace_back(x, y, z);
     }
     this->Radius = maxlength;
     cout << "Sphere Mesh Radius: " << maxlength << endl;
+    //cout << "co:" << co << endl;
     return outPos;
 }
 

@@ -9,10 +9,6 @@ out vec3 FragPos;
 uniform int count;
 uniform mat4 model;
 
-//由于无法创建动态大小数组，所以直接分配32大小，最大支持纹理为32
-uniform mat4 view[32];
-uniform mat4 proj[32];
-
 uniform int free;
 uniform mat4 camera_view;
 uniform mat4 camera_proj;
@@ -22,8 +18,5 @@ void main()
 	Normal = mat3(transpose(inverse(model))) * aNormal;
 	FragPos = vec3(model * vec4(aPos,1.0));//观察坐标下
 	//TexCoord = vec2(aTexCoord.x, aTexCoord.y);
-	if(free == 1)
-		gl_Position = camera_proj * camera_view * model * vec4(aPos, 1.0);
-	else
-		gl_Position = proj[count] * view[count] * model * vec4(aPos, 1.0);
+	gl_Position = camera_proj * camera_view * model * vec4(aPos, 1.0);
 }

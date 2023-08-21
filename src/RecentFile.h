@@ -7,7 +7,8 @@ namespace RecentFile
     std::string recordFileName = "Recent.json";
     std::string defaultSphere = "mesh.txt";
     std::string defaultLight = "light.txt";
-    
+    std::string defaultAttach = "mesh2.txt";
+
     Json::Value root;
 
     std::string GetRecentSphere()
@@ -48,11 +49,12 @@ namespace RecentFile
         if (!Json::parseFromStream(jsonReader, recordFile, &root, &errs))
         {
             std::cout << "解析 JSON 文件时发生错误：" << errs << std::endl;
-            std::cout << "将自动转为默认路径： " << defaultSphere << std::endl;
-            return defaultSphere;
+            std::cout << "将自动转为默认路径： " << defaultAttach << std::endl;
+            return defaultAttach;
         }
         recentFileName = root["light"]["path"].asString();
-        std::cout << "上次打开的Light文件是：" << recentFileName << std::endl;
+        if(!recentFileName.empty())
+            std::cout << "上次打开的Light文件是：" << recentFileName << std::endl;
         recordFile.close();
         return recentFileName;
     }
@@ -71,6 +73,30 @@ namespace RecentFile
         writer->write(root, &recordOutputFile);
         recordOutputFile.close();
         std::cout << "已更新 JSON 文件" << std::endl;
+    }
+
+    std::string GetRecentAttach()
+    {
+        std::ifstream recordFile(recordFileName);
+        Json::CharReaderBuilder jsonReader;
+        //Json::Reader reader;
+        //Json::Value root;
+        std::string errs;
+        std::string recentFileName;
+        if (!recordFile.is_open())
+        {
+            std::cout << "JSON文件打开失败" << "\n";
+        }
+        if (!Json::parseFromStream(jsonReader, recordFile, &root, &errs))
+        {
+            std::cout << "解析 JSON 文件时发生错误：" << errs << std::endl;
+            std::cout << "将自动转为默认路径： " << defaultSphere << std::endl;
+            return defaultSphere;
+        }
+        recentFileName = root["attach"]["path"].asString();
+        std::cout << "上次打开的Attach文件是：" << recentFileName << std::endl;
+        recordFile.close();
+        return recentFileName;
     }
     
 

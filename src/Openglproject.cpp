@@ -89,7 +89,7 @@ static void glfw_error_callback(int error, const char* description)
 SphereMesh sphereM(RecentFile::GetRecentSphere());
 CameraMesh cameraM(RecentFile::GetRecentLight());
 
-void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& sphereShader, Shader& quardShader)
+void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& depthShader, Shader& quardShader)
 {
 
 	//读取文件
@@ -111,9 +111,9 @@ void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& sphere
 	quardShader.use();
 	glUniformMatrix4fv(glGetUniformLocation(quardShader.ID, "view"), cameraVert.size(), GL_FALSE, &worldtoview[0][0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(quardShader.ID, "proj"), cameraVert.size(), GL_FALSE, &allfrustum[0][0][0]);
-	sphereShader.use();
-	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "view"), cameraVert.size(), GL_FALSE, &worldtoview[0][0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(sphereShader.ID, "proj"), cameraVert.size(), GL_FALSE, &allfrustum[0][0][0]);
+	depthShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(depthShader.ID, "view"), cameraVert.size(), GL_FALSE, &worldtoview[0][0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(depthShader.ID, "proj"), cameraVert.size(), GL_FALSE, &allfrustum[0][0][0]);
 
 	sphereM.Bind();
 	cameraM.Bind();
@@ -124,12 +124,13 @@ void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& sphere
 	glm::mat4 model = glm::mat4(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	/*----------------将球幕的深度贴图存入帧缓冲中-----------------*/
-	sphereShader.use();
-	sphereShader.setMat4("model", model);
-	sphereShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//用于一点点diffuse光照
+	depthShader.use();
+	depthShader.setMat4("model", model);
+	depthShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//用于一点点diffuse光照
+	depthShader.setInt("free", 2);
 	for (int i = 0; i < cameraVert.size(); i++)
 	{
-		sphereShader.setInt("count", i);
+		depthShader.setInt("count", i);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, cameraM.depthFBO[i]);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -191,7 +192,10 @@ int main()
 	float points_side_length = 5.5;
 	std::string sphere_file(RecentFile::GetRecentSphere());
 	std::string camera_file(RecentFile::GetRecentLight());
+	std::string attach_file(RecentFile::GetRecentAttach());
 	bool Calspherecamera = true;
+	bool render_Attach = false;
+	bool linemode_Attach = false;
 
 	//注册回调函数
 	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -218,7 +222,9 @@ int main()
 	
 	//SphereMesh sphereM("mesh.txt");
 	//CameraMesh cameraM("light.txt");
-	LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
+	SphereMesh attach(RecentFile::GetRecentAttach());
+
+	LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
 
 	
 	glm::mat4 model = glm::mat4(1.0f);
@@ -233,6 +239,9 @@ int main()
 	//vector<VBOList> volumeVBO;
 	vector<unsigned int> volumeVBO;
 	vector<unsigned int> volumeEBO;
+
+	vector<unsigned int> visiMapFBO;
+	vector<unsigned int> visiMap;
 
 	vector<unsigned int> points_count;
 	vector<unsigned int> elements_count;
@@ -265,6 +274,11 @@ int main()
 			volumeVBO.assign(POI_Y, 0);
 			//volumeVBO.assign(POI_Y, {0,0});
 			volumeEBO.assign(POI_Y,0);
+			visiMapFBO.clear();
+			visiMapFBO.assign(POI_Y, 0);
+			visiMap.clear();
+			visiMap.assign(POI_Y, 0);
+
 
 			points_count.clear();
 			points_count.assign(POI_Y,0);
@@ -273,11 +287,17 @@ int main()
 
 
 			/*---------------------------创建用于保存信息的贴图------------------------------*/
-			unsigned int* visiMapFBO = new unsigned int[POI_Y];
-			glGenFramebuffers(POI_Y, visiMapFBO);
 
-			unsigned int* visiMap = new unsigned int[POI_Y];//创建贴图
-			glGenTextures(POI_Y, visiMap);
+
+			//unsigned int* visiMapFBO = new unsigned int[POI_Y];
+			//vector<unsigned int> visiMapFBO(POI_Y,0);
+			//glDeleteFramebuffers(POI_Y, visiMapFBO.data());			
+			glGenFramebuffers(POI_Y, visiMapFBO.data());
+
+			//unsigned int* visiMap = new unsigned int[POI_Y];//创建贴图
+			//vector<unsigned int> visiMap(POI_Y,0);
+			//glDeleteTextures(POI_Y, visiMap.data());
+			glGenTextures(POI_Y, visiMap.data());
 
 			for (int vmpC = 0; vmpC < POI_Y; vmpC++)
 			{
@@ -288,7 +308,7 @@ int main()
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
+				glBindTexture(GL_TEXTURE_2D, 0);
 				glBindFramebuffer(GL_FRAMEBUFFER, visiMapFBO[vmpC]);
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, visiMap[vmpC], 0);
 			}
@@ -421,12 +441,14 @@ int main()
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, volumeEBO[layer]);
 				glBufferData(GL_ELEMENT_ARRAY_BUFFER, volumeIndex.size() * 3 * sizeof(unsigned int), volumeIndex.data(), GL_STATIC_DRAW);
 
+				glBindVertexArray(0);
 				//savePixelsToTxt(pixels, "matchPoints.txt", layer);
 			}
 			firstRender = false;
-			glDeleteFramebuffers(POI_Y, visiMapFBO);
-			delete[] visiMap;
-			delete[] visiMapFBO;
+			glDeleteFramebuffers(POI_Y, visiMapFBO.data());
+			glDeleteTextures(POI_Y, visiMap.data());
+			//delete[] visiMap;
+			//delete[] visiMapFBO;
 			double end = clock();
 			double duration = end - begin;
 			std::cout << "Complete! Time takes "<<duration<<" ms" << endl;
@@ -457,6 +479,7 @@ int main()
 		glBindVertexArray(sphereM.VAO);
 		if(render_Sphere)
 			glDrawElements(GL_TRIANGLES, sphereM.vertices.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		/*----------------画摄像机-----------------*/
 
@@ -473,7 +496,7 @@ int main()
 		glBindVertexArray(cameraM.VAO);
 		glPointSize(20.0f);
 		glDrawArrays(GL_POINTS, 0, cameraM.cameraVer.size());
-
+		glBindVertexArray(0);
 		/*----------------画采样点-----------------*/
 		if (linemode_Main)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -494,12 +517,27 @@ int main()
 			//glPointSize(2.0f);
 			//glDrawArrays(GL_POINTS, 0, points_count[i] * 8);
 			glDrawElements(GL_TRIANGLES, elements_count[i] * 36, GL_UNSIGNED_INT, nullptr);
+			glBindVertexArray(0);
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//
 		glDisable(GL_CULL_FACE);
 
-
+		/*----------------画附加网格-----------------*/
+		if (render_Attach) 
+		{
+			if(linemode_Attach)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			sphereShader.use();
+			attach.Bind();
+			glBindVertexArray(attach.VAO);
+			glDrawElements(GL_TRIANGLES, attach.vertices.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glBindVertexArray(0);
+		}
+			
 
 
 		/*-----------显示一层POI_X * POI_Z点的情况-------------*/
@@ -559,11 +597,27 @@ int main()
 			ImGui::Text(camera_file.c_str());
 			if (ImGui::Button((const char*)u8"计算"))
 			{
+				
+				//这一步非常关键，需要删除之前的FBO
+				glDeleteFramebuffers(32, cameraM.depthFBO.data());
+				glDeleteTextures(32, cameraM.depthMap.data());
+				/*glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
+				glDeleteTextures(cameraM.cameraVer.size(), cameraM.depthMap.data());*/
+				glDeleteVertexArrays(1, &cameraM.VAO);
+				glDeleteBuffers(1, &cameraM.VBO);
+				glDeleteVertexArrays(1, &sphereM.VAO);
+				glDeleteBuffers(1, &sphereM.VBO);
+				glDeleteBuffers(1, &sphereM.EBO);	
+				glDeleteVertexArrays(POI_Y, volumeVAO.data());
+				glDeleteBuffers(POI_Y, volumeVBO.data());
+				glDeleteBuffers(POI_Y, volumeEBO.data());
+				/*glDeleteFramebuffers(POI_Y, visiMapFBO.data());
+				glDeleteTextures(POI_Y, visiMap.data());*/
+
 				sphereM.ReBuid(sphere_file);
 				cameraM.ReBuid(camera_file);
-				//这一步非常关键，需要删除之前的FBO
-				glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
-				LoadSphereAndLight(sphereM, cameraM, sphereShader, QuardShader);
+
+				LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
 				firstRender = true;
 				//size = 16;
 				//POI_X = 16;
@@ -572,7 +626,20 @@ int main()
 
 				RecentFile::refreshRecent(sphere_file, camera_file);
 			}
+			if (ImGui::Button((const char*)u8"选择附加网格文件"))
+			{
+				attach_file = FileDlg::GetFileDialog();
+				attach.ReBuid(attach_file);
+				if (!attach_file.empty())
+					render_Attach = true;
+			}
+			if (ImGui::Button((const char*)u8"删除附加网格文件"))
+			{
+				attach_file = "";
+				render_Attach = false;
+			}
 
+			ImGui::Text(attach_file.c_str());
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
 		}

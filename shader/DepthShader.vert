@@ -1,12 +1,25 @@
 #version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoords;
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
 
+out vec2 TexCoord;
+out vec3 Normal;
+out vec3 FragPos;
+uniform int count;
+uniform mat4 model;
 
-out vec2 TexCoords;
+//由于无法创建动态大小数组，所以直接分配32大小，最大支持纹理为32
+uniform mat4 view[32];
+uniform mat4 proj[32];
 
+uniform mat4 camera_view;
+uniform mat4 camera_proj;
 void main()
 {
-    TexCoords = aTexCoords;
-    gl_Position = vec4(aPos, 1.0);
+	
+	Normal = mat3(transpose(inverse(model))) * aNormal;
+	FragPos = vec3(model * vec4(aPos,1.0));//观察坐标下
+	//TexCoord = vec2(aTexCoord.x, aTexCoord.y);
+	gl_Position = proj[count] * view[count] * model * vec4(aPos, 1.0);
 }

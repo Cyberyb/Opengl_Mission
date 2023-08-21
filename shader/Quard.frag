@@ -68,7 +68,7 @@ void main()
         //判断是否在视野内
         if(!InSight(pos))
             flag+=1;
-        else if(InSight(pos) && depthValue == 1.0)
+        else if(InSight(pos) && depthValue >= 0.99)
             flag+=1;
     }
 
