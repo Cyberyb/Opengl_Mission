@@ -15,6 +15,14 @@ uniform float radius;
 uniform float sidelength;
 uniform int sizeOfDep;
 
+uniform float upCut;
+uniform float downCut;
+uniform float leftCut;
+uniform float rightCut;
+uniform float frontCut;
+uniform float backCut;
+
+
 uniform int row;
 uniform int col;
 uniform int hei;
@@ -85,6 +93,18 @@ void main()
     if(length(worldpos)>radius)
         FragColor = vec4(0.0,0.0,0.0,0.0);
 
+    if(worldpos.x > rightCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+    if(worldpos.x < leftCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+    if(worldpos.y > upCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+    if(worldpos.y < downCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+    if(worldpos.z > backCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
+    if(worldpos.z < frontCut)
+        FragColor = vec4(0.0,0.0,0.0,0.0);
     //if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
         //FragColor = vec4(0.0,0.0,0.0,0.0);
     //else

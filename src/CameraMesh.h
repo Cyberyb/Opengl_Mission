@@ -40,7 +40,7 @@ public:
     void Bind();
     vector<glm::mat4> CalWorld2View();
     vector<glm::mat4> CalFrustum();
-    void CreateDepthMap();
+    void CreateDepthMap(const unsigned int SCR_WIDTH, const unsigned int SCR_HEIGHT);
     void ReBuid(const std::string& filename);
 private:
     std::string file;
@@ -224,7 +224,7 @@ vector<glm::mat4> CameraMesh::CalFrustum()
     return allfrustum;
 }
 
-void CameraMesh::CreateDepthMap()
+void CameraMesh::CreateDepthMap(const unsigned int SCR_WIDTH, const unsigned int SCR_HEIGHT)
 {
     if (cameraVer.empty())
     {

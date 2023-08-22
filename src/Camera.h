@@ -115,10 +115,18 @@ public:
 
 		modelYaw += xoffset;
 		modelPitch += yoffset;
+		if (modelPitch >= 85.0f || modelPitch <= -85.0f)
+		{
+			modelPitch -= yoffset;
+			yoffset = 0;
+		}
+
+		//cout << modelPitch << endl;
 
 		glm::mat4 mat(1.0f);
 		
-		rotateaxisY = glm::mat3(glm::rotate(mat, glm::radians(modelPitch), glm::vec3(1.0f, 0.0f, 0.0f))) * glm::vec3(0.0f,1.0f,0.0f);
+
+		//rotateaxisY = glm::mat3(glm::rotate(mat, glm::radians(modelPitch), glm::vec3(1.0f, 0.0f, 0.0f))) * glm::vec3(0.0f,1.0f,0.0f);
 		rotateaxisX = glm::mat3(glm::rotate(mat, glm::radians(modelYaw), glm::vec3(0.0f, 1.0f, 0.0f))) * glm::vec3(1.0f, 0.0f, 0.0f);
 		//std::cout << rotateaxisX.x << " " << rotateaxisX.y << " " << rotateaxisX.z << std::endl;
 		 
@@ -132,10 +140,10 @@ public:
 	void ProcessMouseScoll(float yoffset)
 	{
 		Fov -= yoffset;
-		if (Fov >= 89.0f)
-			Fov = 89.0f;
-		else if (Fov <= 1.0f)
-			Fov - 1.0f;
+		if (Fov >= 119.0f)
+			Fov = 119.0f;
+		else if (Fov <= 10.0f)
+			Fov = 10.0f;
 	}
 private:
 	void updateCameraVectors()

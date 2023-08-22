@@ -53,8 +53,8 @@ void RenderData(int x,int y,int z);
 
 
 
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+int SCR_WIDTH = 1280;
+int SCR_HEIGHT = 720;
 
 const unsigned int VISI_WIDTH = 2500;
 const unsigned int VISI_HEIGHT = 50;
@@ -119,7 +119,7 @@ void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& depthS
 	cameraM.Bind();
 
 	/*---------------------------深度贴图------------------------------*/
-	cameraM.CreateDepthMap();
+	cameraM.CreateDepthMap(SCR_WIDTH,SCR_HEIGHT);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -192,15 +192,28 @@ int main()
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	ImVec4 main_color = ImVec4(1.0f, 0.0f, 0.0f, 0.0f);
 	float points_side_length = 5.5;
+	bool Calspherecamera = true;
+	bool render_Attach = true;
+	bool linemode_Attach = false;
+	bool light_Main = true;
+
 	std::string sphere_file(RecentFile::GetRecentSphere());
 	std::string camera_file(RecentFile::GetRecentLight());
-	std::string attach_file(RecentFile::GetRecentAttach());
-	bool Calspherecamera = true;
-	bool render_Attach = false;
-	bool linemode_Attach = false;
+	std::string attach_file(RecentFile::GetRecentAttach(render_Attach));
+
+	float radius_cut = 5.5;
+	float up_cut = 5.0;
+	float down_cut = -5.0;
+	float left_cut = -5.0;
+	float right_cut = 5.0;
+	float front_cut = -5.0;
+	float back_cut = 5.0;
+
+	//由于打开文件对话框后会转移C++工作目录，故提前保存当前工作目录下的json文件
+	RecentFile::init();
 
 	//注册回调函数
-	//glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	//glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -224,7 +237,7 @@ int main()
 	
 	//SphereMesh sphereM("mesh.txt");
 	//CameraMesh cameraM("light.txt");
-	SphereMesh attach(RecentFile::GetRecentAttach());
+	SphereMesh attach(RecentFile::GetRecentAttach(render_Attach));
 	attach.Bind();
 
 	LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
@@ -249,6 +262,8 @@ int main()
 	vector<unsigned int> points_count;
 	vector<unsigned int> elements_count;
 
+	int win_wid;
+	int win_hei;
 	while (!glfwWindowShouldClose(window))
 	{
 		//时间设置
@@ -263,6 +278,8 @@ int main()
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
+		//cout << win_wid << " " << win_hei << endl;
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 
@@ -352,6 +369,13 @@ int main()
 			QuardShader.setFloat("radius", sphereM.Radius);
 			QuardShader.setFloat("sidelength", points_side_length);
 			QuardShader.setInt("sizeOfDep", cameraM.cameraVer.size());
+
+			QuardShader.setFloat("upCut", sphereM.up_cut);
+			QuardShader.setFloat("downCut", sphereM.down_cut);
+			QuardShader.setFloat("rightCut", sphereM.right_cut);
+			QuardShader.setFloat("leftCut", sphereM.left_cut);
+			QuardShader.setFloat("frontCut", sphereM.front_cut);
+			QuardShader.setFloat("backCut", sphereM.back_cut);
 			//QuardShader.setInt("floors",);
 
 			vector<GLint> texIndex;
@@ -512,10 +536,19 @@ int main()
 		glEnable(GL_CULL_FACE);
 		pointsShader.use();
 
+		pointsShader.setBool("light", light_Main);
 		pointsShader.setMat4("view", view);
 		pointsShader.setMat4("proj", projection);
 		pointsShader.setMat4("model", model);
 		pointsShader.setVec4("main_color", glm::vec4(main_color.x,main_color.y,main_color.z,main_color.w));
+
+		pointsShader.setFloat("upCut", up_cut);
+		pointsShader.setFloat("downCut", down_cut);
+		pointsShader.setFloat("rightCut", right_cut);
+		pointsShader.setFloat("leftCut", left_cut);
+		pointsShader.setFloat("frontCut", front_cut);
+		pointsShader.setFloat("backCut", back_cut);
+		pointsShader.setFloat("radiusCut", radius_cut);
 
 		if (render_Main)
 		{
@@ -579,106 +612,154 @@ int main()
 
 			ImGui::Begin((const char*)u8"设置");                          // Create a window called "Hello, world!" and append into it.
 			ImGui::Text((const char*)u8"当前球幕网格半径：%.3f",sphereM.Radius);
+			ImGui::Text((const char*)u8"平均帧率 %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			if (ImGui::TreeNode((const char*)u8"文件选择"))
+			{
+				if (ImGui::Button((const char*)u8"选择球幕文件"))
+				{
+					std::string temp = FileDlg::GetFileDialog();
+					if (temp != "")
+					{
+						sphere_file = temp;
+					}
+				}
+				ImGui::Text(sphere_file.c_str());
+				if (ImGui::Button((const char*)u8"选择摄像机文件"))
+				{
+					std::string temp = FileDlg::GetFileDialog();
+					if (temp != "")
+					{
+						camera_file = temp;
+					}
+				}
+				ImGui::Text(camera_file.c_str());
+				if (ImGui::Button((const char*)u8"计算"))
+				{
 
-			ImGui::Checkbox((const char*)u8"球幕显示", &render_Sphere);
-			//ImGui::Text((const char*)u8"是否启用线框模式");               // Display some text (you can use a format strings too)
-			ImGui::Checkbox((const char*)u8"球幕线框模式", &linemode_Sphere);      // Edit bools storing our window open/close state
+					//这一步非常关键，需要删除之前的FBO
+					glDeleteFramebuffers(32, cameraM.depthFBO.data());
+					glDeleteTextures(32, cameraM.depthMap.data());
+					/*glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
+					glDeleteTextures(cameraM.cameraVer.size(), cameraM.depthMap.data());*/
+					glDeleteVertexArrays(1, &cameraM.VAO);
+					glDeleteBuffers(1, &cameraM.VBO);
+					glDeleteVertexArrays(1, &sphereM.VAO);
+					glDeleteBuffers(1, &sphereM.VBO);
+					glDeleteBuffers(1, &sphereM.EBO);
+					glDeleteVertexArrays(POI_Y, volumeVAO.data());
+					glDeleteBuffers(POI_Y, volumeVBO.data());
+					glDeleteBuffers(POI_Y, volumeEBO.data());
+					/*glDeleteFramebuffers(POI_Y, visiMapFBO.data());
+					glDeleteTextures(POI_Y, visiMap.data());*/
+
+					sphereM.ReBuid(sphere_file);
+					cameraM.ReBuid(camera_file);
+
+					LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
+					firstRender = true;
+					//size = 16;
+					//POI_X = 16;
+					//POI_Y = 16;
+					//POI_Z = 16;				
+					RecentFile::refreshRecent(sphere_file, camera_file);
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode((const char*)u8"显示设置"))
+			{
+				ImGui::Checkbox((const char*)u8"球幕显示", &render_Sphere);
+				ImGui::SameLine();
+				//ImGui::Text((const char*)u8"是否启用线框模式");               // Display some text (you can use a format strings too)
+				ImGui::Checkbox((const char*)u8"球幕线框模式", &linemode_Sphere);      // Edit bools storing our window open/close state
+
+				ImGui::Checkbox((const char*)u8"主体显示", &render_Main);
+				ImGui::SameLine();
+				ImGui::Checkbox((const char*)u8"主体线框模式", &linemode_Main);
+
+				ImGui::Checkbox((const char*)u8"摄像机显示", &render_Camera);
+
+				//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+
+				ImGui::Checkbox((const char*)u8"主体启用光照", &light_Main);
+				ImGui::ColorEdit3((const char*)u8"主体颜色", (float*)&main_color); // Edit 3 floats representing a color
+
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode((const char*)u8"附加网格"))
+			{
+				if (ImGui::Button((const char*)u8"选择附加网格文件"))
+				{
+					std::string temp = FileDlg::GetFileDialog();
+					if (temp != "")
+					{
+						attach_file = temp;
+					}
+					glDeleteVertexArrays(1, &attach.VAO);
+					glDeleteBuffers(1, &attach.VBO);
+					glDeleteBuffers(1, &attach.EBO);
+					attach.ReBuid(attach_file);
+					attach.Bind();
+					if (!attach_file.empty())
+						render_Attach = true;
+					RecentFile::refreshAttach(attach_file, render_Attach);
+				}
+				ImGui::Text(attach_file.c_str());
+				if (render_Attach)
+				{
+					if (ImGui::Button((const char*)u8"删除附加网格文件"))
+					{
+						attach_file = "";
+						render_Attach = false;
+						RecentFile::refreshAttach(attach_file, render_Attach);
+					}
+					ImGui::Checkbox((const char*)u8"附加网格线框模式", &linemode_Attach);
+				}
+				ImGui::Text(attach_file.c_str());
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode((const char*)u8"计算设置"))
+			{
+				ImGui::SliderFloat((const char*)u8"设定计算点云的边长", &points_side_length, 5.0, 20.0);
+				ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 1024);
+				if (ImGui::Button((const char*)u8"重置大小"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
+				{
+					POI_X = size;
+					POI_Y = size;
+					POI_Z = size;
+					firstRender = true;
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode((const char*)u8"剔除设置"))
+			{
+				ImGui::SliderFloat((const char*)u8"球形剔除半径", &radius_cut, 0.2, 20.0);
+
+
+				ImGui::SliderFloat((const char*)u8"上剔除面", &up_cut, 0.2, 20.0);
+				ImGui::SliderFloat((const char*)u8"下剔除面", &down_cut, -20.0, -0.2);
+				ImGui::SliderFloat((const char*)u8"右剔除面", &right_cut, 0.2, 20.0);
+				ImGui::SliderFloat((const char*)u8"左剔除面", &left_cut, -20.0, -0.2);
+				ImGui::SliderFloat((const char*)u8"后剔除面", &back_cut, 0.2, 20.0);
+				ImGui::SliderFloat((const char*)u8"前剔除面", &front_cut, -20.0, -0.2);
+
+				if (ImGui::Button((const char*)u8"应用剔除设置进行计算"))
+				{
+					sphereM.Radius = radius_cut;
+					sphereM.up_cut = up_cut;
+					sphereM.down_cut = down_cut;
+					sphereM.right_cut = right_cut;
+					sphereM.left_cut = left_cut;
+					sphereM.back_cut = back_cut;
+					sphereM.front_cut = front_cut;
+
+					firstRender = true;
+				}
+				ImGui::TreePop();
+			}
+
 			
-			ImGui::Checkbox((const char*)u8"主体显示", &render_Main);
-			ImGui::Checkbox((const char*)u8"主体线框模式", &linemode_Main);
-
-			ImGui::Checkbox((const char*)u8"摄像机显示", &render_Camera);
-
-			//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-			ImGui::ColorEdit3((const char*)u8"主体颜色", (float*)&main_color); // Edit 3 floats representing a color
-			ImGui::SliderFloat((const char*)u8"设定计算点云的边长", &points_side_length, 5.0, 8.0);
-			ImGui::SliderInt((const char*)u8"设定大小", &size, 16, 1024);
-			if (ImGui::Button((const char*)u8"重置大小"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
-			{
-				POI_X = size;
-				POI_Y = size;
-				POI_Z = size;
-				firstRender = true;
-			}
-			if (ImGui::Button((const char*)u8"选择球幕文件"))
-			{
-				std::string temp = FileDlg::GetFileDialog();
-				if (temp != "")
-				{
-					sphere_file = temp;
-				}								
-			}
-			ImGui::Text(sphere_file.c_str());
-			if (ImGui::Button((const char*)u8"选择摄像机文件"))
-			{
-				std::string temp = FileDlg::GetFileDialog();
-				if (temp != "")
-				{
-					camera_file = temp;
-				}			
-			}
-			ImGui::Text(camera_file.c_str());
-			if (ImGui::Button((const char*)u8"计算"))
-			{
-				
-				//这一步非常关键，需要删除之前的FBO
-				glDeleteFramebuffers(32, cameraM.depthFBO.data());
-				glDeleteTextures(32, cameraM.depthMap.data());
-				/*glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
-				glDeleteTextures(cameraM.cameraVer.size(), cameraM.depthMap.data());*/
-				glDeleteVertexArrays(1, &cameraM.VAO);
-				glDeleteBuffers(1, &cameraM.VBO);
-				glDeleteVertexArrays(1, &sphereM.VAO);
-				glDeleteBuffers(1, &sphereM.VBO);
-				glDeleteBuffers(1, &sphereM.EBO);	
-				glDeleteVertexArrays(POI_Y, volumeVAO.data());
-				glDeleteBuffers(POI_Y, volumeVBO.data());
-				glDeleteBuffers(POI_Y, volumeEBO.data());
-				/*glDeleteFramebuffers(POI_Y, visiMapFBO.data());
-				glDeleteTextures(POI_Y, visiMap.data());*/
-
-				sphereM.ReBuid(sphere_file);
-				cameraM.ReBuid(camera_file);
-
-				LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
-				firstRender = true;
-				//size = 16;
-				//POI_X = 16;
-				//POI_Y = 16;
-				//POI_Z = 16;
-				RecentFile::refreshRecent(sphere_file, camera_file);
-			}
-			if (ImGui::Button((const char*)u8"选择附加网格文件"))
-			{
-				std::string temp = FileDlg::GetFileDialog();
-				if (temp != "")
-				{
-					attach_file = temp;
-				}
-				glDeleteVertexArrays(1, &attach.VAO);
-				glDeleteBuffers(1, &attach.VBO);
-				glDeleteBuffers(1, &attach.EBO);
-				attach.ReBuid(attach_file);
-				attach.Bind();
-				if (!attach_file.empty())
-					render_Attach = true;
-			}
-			ImGui::Text(attach_file.c_str());
-			if (render_Attach)
-			{
-				if (ImGui::Button((const char*)u8"删除附加网格文件"))
-				{
-					attach_file = "";
-					render_Attach = false;
-				}
-				ImGui::Checkbox((const char*)u8"附加网格线框模式", &linemode_Attach);
-			}
-
-
-
-
-			ImGui::Text(attach_file.c_str());
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
 		}
 

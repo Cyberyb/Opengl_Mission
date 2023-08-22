@@ -24,6 +24,13 @@ public:
 
     float Radius;
 
+    float up_cut = 20.0;
+    float down_cut = -20.0;
+    float left_cut = -20.0;
+    float right_cut = 20.0;
+    float front_cut = -20.0;
+    float back_cut = 20.0;
+
 	//Vertex vertices;
     std::vector<glm::vec3> vertices;
     std::vector<glm::uvec3> index;
