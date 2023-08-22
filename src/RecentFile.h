@@ -5,14 +5,15 @@
 #include <direct.h>
 namespace RecentFile
 {
+    bool is_init = false;
 
     char buff[255];
     //_getcwd(buff, 255);
     //std::string current_working_directory(buff);
     //std::cout << current_working_directory << std::endl;
     std::string recordFileName = "Recent.json";
-    std::string defaultSphere = "./mesh.txt";
-    std::string defaultLight = "./light.txt";
+    std::string defaultSphere = "mesh.txt";
+    std::string defaultLight = "light.txt";
     std::string defaultAttach = "";
 
     Json::Value root;
@@ -21,13 +22,20 @@ namespace RecentFile
     {
         _getcwd(buff, 255);
         std::string current_working_directory(buff);
-        std::cout << current_working_directory << std::endl;
-        recordFileName = current_working_directory +std::string("\\") + recordFileName;
-        std::cout << recordFileName << std::endl;
+        recordFileName = current_working_directory + std::string("\\") + recordFileName;
+        defaultSphere = current_working_directory + std::string("\\") + defaultSphere;
+        defaultLight = current_working_directory + std::string("\\") + defaultLight;
+
+        std::locale::global(std::locale("zh_CN.UTF-8"));
+
+        is_init = true;
     }
 
     std::string GetRecentSphere()
     {
+        if (!is_init)
+            init();
+
         std::ifstream recordFile(recordFileName);
         Json::CharReaderBuilder jsonReader;
         //Json::Reader reader;
@@ -36,22 +44,23 @@ namespace RecentFile
         std::string recentFileName;
         if(!recordFile.is_open())
         {
-            std::cout << "JSON文件打开失败" << "\n";
+            std::cout << (const char*)u8"JSON文件打开失败" << "\n";
         }
         if (!Json::parseFromStream(jsonReader,recordFile,&root,&errs))
         {
-            std::cout << "解析 JSON 文件时发生错误：" << errs << std::endl;
-            std::cout << "将自动转为默认路径： " << defaultSphere << std::endl;
+            std::cout << (const char*)u8"解析 JSON 文件时发生错误：" << errs << std::endl;
+            std::cout << (const char*)u8"将自动转为默认路径： " << defaultSphere << std::endl;
             return defaultSphere;
         }
+
         recentFileName = root["sphere"]["path"].asString();
-        std::cout << "上次打开的Sphere文件是：" << recentFileName << std::endl;
+        //std::cout << "上次打开的Sphere文件是：" << recentFileName << std::endl;
         
         std::ifstream sphere_file(recentFileName);
         if (!sphere_file.is_open())
         {
-            std::cout << "找不到JSON文件的路径：" << recentFileName << std::endl;
-            std::cout << "将启用默认路径：" << defaultSphere << std::endl;
+            std::cout << (const char*)u8"找不到JSON文件的路径：" << recentFileName << std::endl;
+            std::cout << (const char*)u8"将启用默认路径：" << defaultSphere << std::endl;
             recentFileName = defaultSphere;
             sphere_file.close();
         }
@@ -62,6 +71,9 @@ namespace RecentFile
 
     std::string GetRecentLight()
     {
+        if (!is_init)
+            init();
+        //std::locale::global(std::locale("en_US.UTF-8"));
         std::ifstream recordFile(recordFileName);
         Json::CharReaderBuilder jsonReader;
         //Json::Value root;
@@ -69,24 +81,24 @@ namespace RecentFile
         std::string recentFileName;
         if (!recordFile.is_open())
         {
-            std::cout << "JSON文件打开失败" << "\n";
+            std::cout << (const char*)u8"JSON文件打开失败" << "\n";
         }
         if (!Json::parseFromStream(jsonReader, recordFile, &root, &errs))
         {
-            std::cout << "解析 JSON 文件时发生错误：" << errs << std::endl;
-            std::cout << "将自动转为默认路径： " << defaultAttach << std::endl;
+            std::cout << (const char*)u8"解析 JSON 文件时发生错误：" << errs << std::endl;
+            std::cout << (const char*)u8"将自动转为默认路径： " << defaultLight << std::endl;
             return defaultAttach;
         }
         recentFileName = root["light"]["path"].asString();
-        if(!recentFileName.empty())
-            std::cout << "上次打开的Light文件是：" << recentFileName << std::endl;
+        //if(!recentFileName.empty())
+        //    std::cout << "上次打开的Light文件是：" << recentFileName << std::endl;
 
         std::ifstream light_file(recentFileName);
         if (!light_file.is_open())
         {
-            std::cout << "找不到JSON文件的路径：" << recentFileName << std::endl;
-            std::cout << "将启用默认路径：" << defaultLight << std::endl;
-            recentFileName = defaultSphere;
+            std::cout << (const char*)u8"找不到JSON文件的路径：" << recentFileName << std::endl;
+            std::cout << (const char*)u8"将启用默认路径：" << defaultLight << std::endl;
+            recentFileName = defaultLight;
             light_file.close();
         }
 
@@ -96,6 +108,8 @@ namespace RecentFile
 
     void refreshRecent(std::string sp,std::string lt)
     {
+        if (!is_init)
+            init();
         Json::StyledWriter sw;
         Json::StreamWriterBuilder jsonWriter;
         jsonWriter["emitUTF8"] = true;
@@ -104,7 +118,7 @@ namespace RecentFile
         std::unique_ptr<Json::StreamWriter> writer(jsonWriter.newStreamWriter());
         std::ofstream recordOutputFile(recordFileName, std::ios::binary);
         if (!recordOutputFile.is_open()) {
-            std::cout << "无法写入 JSON 文件" << std::endl;
+            std::cout << (const char*)u8"无法写入 JSON 文件" << std::endl;
         }
         writer->write(root, &recordOutputFile);
         recordOutputFile.close();
@@ -113,6 +127,8 @@ namespace RecentFile
 
     void refreshAttach(std::string at,bool render_attach)
     {
+        if (!is_init)
+            init();
         Json::StyledWriter sw;
         Json::StreamWriterBuilder jsonWriter;
         jsonWriter["emitUTF8"] = true;
@@ -123,7 +139,7 @@ namespace RecentFile
         std::unique_ptr<Json::StreamWriter> writer(jsonWriter.newStreamWriter());
         std::ofstream recordOutputFile(recordFileName, std::ios::binary);
         if (!recordOutputFile.is_open()) {
-            std::cout << "无法写入 JSON 文件" << std::endl;
+            std::cout << (const char*)u8"无法写入 JSON 文件" << std::endl;
         }
         writer->write(root, &recordOutputFile);
         recordOutputFile.close();
@@ -132,6 +148,9 @@ namespace RecentFile
 
     std::string GetRecentAttach(bool& render_Attach)
     {
+        if (!is_init)
+            init();
+        //std::locale::global(std::locale("en_US.UTF-8"));
         std::ifstream recordFile(recordFileName);
         Json::CharReaderBuilder jsonReader;
         //Json::Reader reader;
@@ -140,23 +159,23 @@ namespace RecentFile
         std::string recentFileName;
         if (!recordFile.is_open())
         {
-            std::cout << "JSON文件打开失败" << "\n";
+            std::cout << (const char*)u8"JSON文件打开失败" << "\n";
         }
         if (!Json::parseFromStream(jsonReader, recordFile, &root, &errs))
         {
-            std::cout << "解析 JSON 文件时发生错误：" << errs << std::endl;
-            std::cout << "将自动转为默认路径： " << defaultAttach << std::endl;
+            std::cout << (const char*)u8"解析 JSON 文件时发生错误：" << errs << std::endl;
+            std::cout << (const char*)u8"将自动转为默认路径： " << defaultAttach << std::endl;
             return defaultAttach;
         }
         recentFileName = root["attach"]["path"].asString();
-        std::cout << "上次打开的Attach文件是：" << recentFileName << std::endl;
+        std::cout << (const char*)u8"上次打开的Attach文件是：" << recentFileName << std::endl;
         recordFile.close();
-
+        
         std::ifstream attach_file(recentFileName);
         if (!attach_file.is_open())
         {
-            std::cout << "找不到JSON文件的路径：" << recentFileName << std::endl;
-            std::cout << "将启用默认路径：" << defaultAttach << std::endl;
+            std::cout << (const char*)u8"找不到JSON文件的路径：" << recentFileName << std::endl;
+            std::cout << (const char*)u8"将启用默认路径：" << defaultAttach << std::endl;
             recentFileName = defaultAttach;
             attach_file.close();
         }

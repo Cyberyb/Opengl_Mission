@@ -83,7 +83,7 @@ void CameraMesh::ReBuid(const std::string& filename)
 
 void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex>& cameraVer)
 {
-    std::locale::global(std::locale("en_US.UTF-8"));
+    //std::locale::global(std::locale("en_US.UTF-8"));
     if (!cameraVer.empty())
     {
         cameraVer.clear();
@@ -257,9 +257,7 @@ void CameraMesh::CreateDepthMap(const unsigned int SCR_WIDTH, const unsigned int
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->depthMap[dmpC], 0);
 
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-            cout << "Framebuffer complete!" << endl;
-        else
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             cout << "Framebuffer not complete! " << endl;
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

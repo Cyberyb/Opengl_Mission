@@ -65,7 +65,7 @@ void SphereMesh::ReBuid(const std::string& filename)
 
 std::vector<glm::vec3> SphereMesh::readMeshPos(const std::string& filename) 
 {
-    std::locale::global(std::locale("en_US.UTF-8"));
+    //std::locale::global(std::locale("en_US.UTF-8"));
     std::vector<glm::vec3> outPos;
 	std::ifstream file(filename);
     std::string line;
@@ -113,7 +113,7 @@ std::vector<glm::vec3> SphereMesh::readMeshPos(const std::string& filename)
         outPos.emplace_back(x, y, z);
     }
     this->Radius = maxlength;
-    cout << "Sphere Mesh Radius: " << maxlength << endl;
+    //cout << "Sphere Mesh Radius: " << maxlength << endl;
     //cout << "co:" << co << endl;
     return outPos;
 }

@@ -52,7 +52,6 @@ void renderUI(bool& show_demo_window, bool& show_another_window);
 void RenderData(int x,int y,int z);
 
 
-
 int SCR_WIDTH = 1280;
 int SCR_HEIGHT = 720;
 
@@ -167,9 +166,18 @@ int main()
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	//设置imgui风格
 	ImGui::StyleColorsDark();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
 
 	//设置平台、渲染器后端
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -210,7 +218,7 @@ int main()
 	float back_cut = 5.0;
 
 	//由于打开文件对话框后会转移C++工作目录，故提前保存当前工作目录下的json文件
-	RecentFile::init();
+	//RecentFile::init();
 
 	//注册回调函数
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -336,9 +344,7 @@ int main()
 			//glDrawBuffer(GL_NONE);
 			//glReadBuffer(GL_NONE);
 
-			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-				cout << "Framebuffer complete!" << endl;
-			else
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 				cout << "Framebuffer not complete! " << endl;
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -771,6 +777,14 @@ int main()
 		//glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 		//glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+		}
 
 		glfwSwapBuffers(window);
 
