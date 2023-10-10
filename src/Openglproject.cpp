@@ -1,9 +1,9 @@
-ï»¿using namespace std;
+using namespace std;
 
-/// Openglproject.cpp : æ­¤æ–‡ä»¶åŒ…å« "main" å‡½æ•°ã€‚ç¨‹åºæ‰§è¡Œå°†åœ¨æ­¤å¤„å¼€å§‹å¹¶ç»“æŸã€‚
+/// Openglproject.cpp : ´ËÎÄ¼ş°üº¬ "main" º¯Êı¡£³ÌĞòÖ´ĞĞ½«ÔÚ´Ë´¦¿ªÊ¼²¢½áÊø¡£
 //
 //#include<GL/glew.h>
-#include"Shader.h"//å› ä¸ºåŒ…å«äº†gladåº“ï¼Œéœ€è¦ç½®é¡¶
+#include"Shader.h"//ÒòÎª°üº¬ÁËglad¿â£¬ĞèÒªÖÃ¶¥
 #include<ctime>
 #include <iostream>
 
@@ -43,7 +43,7 @@ void processInput(GLFWwindow* window);
 void processMouseButton(GLFWwindow* window, int& count,bool &changed);
 void processMousePress(GLFWwindow* window);
 
-//renderå‡½æ•°
+//renderº¯Êı
 //void renderSphereMesh(const Shader &shader);
 //void renderSphereCamera(const Shader& shader);
 //void renderSpherePoints(const Shader& shader);
@@ -66,17 +66,17 @@ const unsigned int POI_WIDTH = 50;
 const unsigned int POI_HEIGHT = 50;
 
 float fov = 60.0f;
-float yaw = 90.0f;//è®¾ç½®åèˆªè§’
-float pitch = 0.0f;//è®¾ç½®ä¿¯ä»°è§’
-bool firstmouse = true;//åˆ¤æ–­é¼ æ ‡æ˜¯å¦åˆæ¬¡è¿›å…¥ç”»é¢
-double lastX = (float)SCR_WIDTH / 2;//è®¾ç½®ä¸Šä¸€å¸§é¼ æ ‡ä½ç½®ï¼Œé»˜è®¤ä¸ºå¹³é¢ä¸­å¤®
+float yaw = 90.0f;//ÉèÖÃÆ«º½½Ç
+float pitch = 0.0f;//ÉèÖÃ¸©Ñö½Ç
+bool firstmouse = true;//ÅĞ¶ÏÊó±êÊÇ·ñ³õ´Î½øÈë»­Ãæ
+double lastX = (float)SCR_WIDTH / 2;//ÉèÖÃÉÏÒ»Ö¡Êó±êÎ»ÖÃ£¬Ä¬ÈÏÎªÆ½ÃæÖĞÑë
 double lastY = (float)SCR_HEIGHT / 2;
 
-//æ—¶é—´ç”¨äºè®¾ç½®é¼ æ ‡åœ¨æ¯ä¸€å¸§çš„ä½ç½®å˜åŒ–å±æ€§
+//Ê±¼äÓÃÓÚÉèÖÃÊó±êÔÚÃ¿Ò»Ö¡µÄÎ»ÖÃ±ä»¯ÊôĞÔ
 float deltatime = 0.0f;
 float lasttime = 0.0f;
 
-glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//æ‘„åƒæœºä½ç½®
+glm::vec3 cameraposition = glm::vec3(0.0f, 0.0f, -10.0f);//ÉãÏñ»úÎ»ÖÃ
 glm::vec3 lightposition = glm::vec3(5.0, 5.0, 5.0);
 Camera camera(cameraposition);
 
@@ -91,20 +91,20 @@ CameraMesh cameraM(RecentFile::GetRecentLight());
 void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& depthShader, Shader& quardShader)
 {
 
-	//è¯»å–æ–‡ä»¶
+	//¶ÁÈ¡ÎÄ¼ş
 	//SphereMesh sphereM(Sphere);
 	//CameraMesh cameraM(Light);
-	//çƒå¹•é¡¶ç‚¹ä»¥åŠç´¢å¼•
+	//ÇòÄ»¶¥µãÒÔ¼°Ë÷Òı
 	std::vector<glm::vec3> vert = sphereM.vertices;
 	std::vector<glm::uvec3> index = sphereM.index;
-	//å…‰æºæ‘„åƒæœºå¯¹è±¡
+	//¹âÔ´ÉãÏñ»ú¶ÔÏó
 	std::vector<cameraVertex> cameraVert = cameraM.cameraVer;
 
-	//æå‰è®¡ç®—å¤šä¸ªå…‰æºæ‘„åƒæœºçš„å˜æ¢çŸ©é˜µ
+	//ÌáÇ°¼ÆËã¶à¸ö¹âÔ´ÉãÏñ»úµÄ±ä»»¾ØÕó
 	vector<glm::mat4> worldtoview = cameraM.CalWorld2View();
 
 
-	//æå‰è®¡ç®—å¤šä¸ªå…‰æºæ‘„åƒæœºçš„Frustum
+	//ÌáÇ°¼ÆËã¶à¸ö¹âÔ´ÉãÏñ»úµÄFrustum
 	vector<glm::mat4> allfrustum = cameraM.CalFrustum();
 
 	quardShader.use();
@@ -117,15 +117,15 @@ void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& depthS
 	sphereM.Bind();
 	cameraM.Bind();
 
-	/*---------------------------æ·±åº¦è´´å›¾------------------------------*/
+	/*---------------------------Éî¶ÈÌùÍ¼------------------------------*/
 	cameraM.CreateDepthMap(SCR_WIDTH,SCR_HEIGHT);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glEnable(GL_DEPTH_TEST);
-	/*----------------å°†çƒå¹•çš„æ·±åº¦è´´å›¾å­˜å…¥å¸§ç¼“å†²ä¸­-----------------*/
+	/*----------------½«ÇòÄ»µÄÉî¶ÈÌùÍ¼´æÈëÖ¡»º³åÖĞ-----------------*/
 	depthShader.use();
 	depthShader.setMat4("model", model);
-	depthShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//ç”¨äºä¸€ç‚¹ç‚¹diffuseå…‰ç…§
+	depthShader.setVec3("lightPos", glm::vec3(5.0, 5.0, 5.0));//ÓÃÓÚÒ»µãµãdiffuse¹âÕÕ
 	depthShader.setInt("free", 2);
 	for (int i = 0; i < cameraVert.size(); i++)
 	{
@@ -143,24 +143,23 @@ void LoadSphereAndLight(SphereMesh& sphereM, CameraMesh& cameraM, Shader& depthS
 
 }
 
-
 int main()
 {
 	glfwSetErrorCallback(glfw_error_callback);
-	//glfwçš„åˆå§‹åŒ–ä»¥åŠæŒ‡æ˜ç‰ˆæœ¬å·
+	//glfwµÄ³õÊ¼»¯ÒÔ¼°Ö¸Ã÷°æ±¾ºÅ
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	//åˆ›å»ºçª—å£
+	//´´½¨´°¿Ú
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Missing Points", NULL, NULL);
 
-	//è¿æ¥ä¸Šä¸‹æ–‡
+	//Á¬½ÓÉÏÏÂÎÄ
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // Enable vsync
 
-	//è®¾ç½®imguiä¸Šä¸‹æ–‡
+	//ÉèÖÃimguiÉÏÏÂÎÄ
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -169,7 +168,7 @@ int main()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-	//è®¾ç½®imguié£æ ¼
+	//ÉèÖÃimgui·ç¸ñ
 	ImGui::StyleColorsDark();
 
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -179,15 +178,21 @@ int main()
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
 
-	//è®¾ç½®å¹³å°ã€æ¸²æŸ“å™¨åç«¯
+	//ÉèÖÃÆ½Ì¨¡¢äÖÈ¾Æ÷ºó¶Ë
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
-	//imguiå­—ä½“
+	//imgui×ÖÌå
 	io.Fonts->AddFontFromFileTTF("imgui/YaHei.ttf", 16.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 	io.Fonts->Build();
 
-	//imguiçŠ¶æ€
+
+	
+
+	//imgui×´Ì¬
+	RecentFile::imguiSetting ims;
+
+
 	bool show_demo_window = true;
 	bool show_another_window = false;
 	bool linemode_Sphere = true;
@@ -204,10 +209,14 @@ int main()
 	bool render_Attach = true;
 	bool linemode_Attach = false;
 	bool light_Main = true;
+	bool write_txt = false;
+	bool lightfollowcamera = true;
 
-	std::string sphere_file(RecentFile::GetRecentSphere());
-	std::string camera_file(RecentFile::GetRecentLight());
-	std::string attach_file(RecentFile::GetRecentAttach(render_Attach));
+	SphereMesh attach(RecentFile::GetRecentAttach(render_Attach));
+
+	std::string sphere_file(sphereM.filepath);
+	std::string camera_file(cameraM.filepath);
+	std::string attach_file(attach.filepath);
 
 	float radius_cut = 5.5;
 	float up_cut = 5.0;
@@ -217,18 +226,28 @@ int main()
 	float front_cut = -5.0;
 	float back_cut = 5.0;
 
-	//ç”±äºæ‰“å¼€æ–‡ä»¶å¯¹è¯æ¡†åä¼šè½¬ç§»C++å·¥ä½œç›®å½•ï¼Œæ•…æå‰ä¿å­˜å½“å‰å·¥ä½œç›®å½•ä¸‹çš„jsonæ–‡ä»¶
+	float light_x = 30;
+	float light_y = 0;
+	float light_dep = 10;
+
+	float light_rel_x = 30;
+	float light_rel_y = 30;
+
+	float ambientStrength = 0.3;
+	float diffStrength = 0.7;
+
+	//ÓÉÓÚ´ò¿ªÎÄ¼ş¶Ô»°¿òºó»á×ªÒÆC++¹¤×÷Ä¿Â¼£¬¹ÊÌáÇ°±£´æµ±Ç°¹¤×÷Ä¿Â¼ÏÂµÄjsonÎÄ¼ş
 	//RecentFile::init();
 
-	//æ³¨å†Œå›è°ƒå‡½æ•°
+	//×¢²á»Øµ÷º¯Êı
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	//glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-	//è®¾ç½®æ•æ‰å…‰æ ‡
+	//ÉèÖÃ²¶×½¹â±ê
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	//åˆå§‹åŒ–glad
+	//³õÊ¼»¯glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
@@ -236,7 +255,7 @@ int main()
 	}
 
 
-	//åˆ›å»ºå¹¶ä¸”ç¼–è¯‘Shaderç¨‹åº
+	//´´½¨²¢ÇÒ±àÒëShader³ÌĞò
 	Shader sphereShader("./shader/SphereMesh.vert", "./shader/SphereMesh.frag");
 	Shader cameraShader("./shader/CameraMesh.vert", "./shader/CameraMesh.frag");
 	Shader pointsShader("./shader/PointsMesh.vert", "./shader/PointsMesh.frag");
@@ -245,7 +264,8 @@ int main()
 	
 	//SphereMesh sphereM("mesh.txt");
 	//CameraMesh cameraM("light.txt");
-	SphereMesh attach(RecentFile::GetRecentAttach(render_Attach));
+
+
 	attach.Bind();
 
 	LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
@@ -257,7 +277,7 @@ int main()
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//å‡†å¤‡æ•°æ®
+	//×¼±¸Êı¾İ
 	//unsigned int* volumeVAO;
 	vector<unsigned int> volumeVAO;
 	//vector<VBOList> volumeVBO;
@@ -274,7 +294,7 @@ int main()
 	int win_hei;
 	while (!glfwWindowShouldClose(window))
 	{
-		//æ—¶é—´è®¾ç½®
+		//Ê±¼äÉèÖÃ
 		float currenttime = glfwGetTime();
 		deltatime = currenttime - lasttime;
 		lasttime = currenttime;
@@ -293,6 +313,7 @@ int main()
 
 		if (firstRender)
 		{
+			std::cout << "ÕıÔÚ¼ÆËã......" << std::endl;
 			double begin = clock();
 			//volumeVAO = new unsigned int[POI_Y];
 			volumeVAO.clear();
@@ -314,7 +335,7 @@ int main()
 			elements_count.assign(POI_Y, 0);
 
 
-			/*---------------------------åˆ›å»ºç”¨äºä¿å­˜ä¿¡æ¯çš„è´´å›¾------------------------------*/
+			/*---------------------------´´½¨ÓÃÓÚ±£´æĞÅÏ¢µÄÌùÍ¼------------------------------*/
 
 
 			//unsigned int* visiMapFBO = new unsigned int[POI_Y];
@@ -322,7 +343,7 @@ int main()
 			//glDeleteFramebuffers(POI_Y, visiMapFBO.data());			
 			glGenFramebuffers(POI_Y, visiMapFBO.data());
 
-			//unsigned int* visiMap = new unsigned int[POI_Y];//åˆ›å»ºè´´å›¾
+			//unsigned int* visiMap = new unsigned int[POI_Y];//´´½¨ÌùÍ¼
 			//vector<unsigned int> visiMap(POI_Y,0);
 			//glDeleteTextures(POI_Y, visiMap.data());
 			glGenTextures(POI_Y, visiMap.data());
@@ -350,24 +371,24 @@ int main()
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-			//å¯ç”¨æ·±åº¦æµ‹è¯•ï¼ŒglEnableå’ŒglDisableå¯ä»¥å¯ç”¨æˆ–è€…å…³é—­openglçš„æŸä¸ªåŠŸèƒ½
+			//ÆôÓÃÉî¶È²âÊÔ£¬glEnableºÍglDisable¿ÉÒÔÆôÓÃ»òÕß¹Ø±ÕopenglµÄÄ³¸ö¹¦ÄÜ
 
 
 
 
-			//å•æ¬¡æ¸²æŸ“ï¼Œ1.æ¸²æŸ“16å¼ æ·±åº¦è´´å›¾  2.æ¸²æŸ“POI_Yå±‚ç­›é€‰åç‚¹çš„åˆ†å¸ƒè´´å›¾
+			//µ¥´ÎäÖÈ¾£¬1.äÖÈ¾16ÕÅÉî¶ÈÌùÍ¼  2.äÖÈ¾POI_Y²ãÉ¸Ñ¡ºóµãµÄ·Ö²¼ÌùÍ¼
 
 
 			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-			/*------------è·å–POI_X * POI_Zä¸ªç‚¹çš„å¯è§†æ€§æƒ…å†µçº¹ç†ï¼Œå…±è®¡POI_Yå±‚---------*/
+			/*------------»ñÈ¡POI_X * POI_Z¸öµãµÄ¿ÉÊÓĞÔÇé¿öÎÆÀí£¬¹²¼ÆPOI_Y²ã---------*/
 			glViewport(0, 0, POI_X, POI_Z);
 
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			QuardShader.use();
-			//QuardShader.setInt("count", viewMatCount);//ä¼ é€’æ‘„åƒæœºè®¡æ•°
+			//QuardShader.setInt("count", viewMatCount);//´«µİÉãÏñ»ú¼ÆÊı
 			QuardShader.setMat4("model", model);
 			QuardShader.setInt("row", POI_X);
 			QuardShader.setInt("col", POI_Z);
@@ -398,7 +419,7 @@ int main()
 				glBindTexture(GL_TEXTURE_2D, cameraM.depthFBO[i]);
 			}
 
-			//é€å±‚æ¸²æŸ“
+			//Öğ²ãäÖÈ¾
 			for (int layer = 0; layer < POI_Y; layer++)
 			{
 				QuardShader.setInt("layer", layer);
@@ -409,7 +430,7 @@ int main()
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);				
 			}
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-			/*--------------è¾“å‡ºæ¨¡å—/æŒ–ç©ºç®—æ³•/ç½‘æ ¼ç‚¹ç»“æ„ä½“ç”Ÿæˆ/ç½‘æ ¼ç´¢å¼•ç”Ÿæˆ---------------*/
+			/*--------------Êä³öÄ£¿é/ÍÚ¿ÕËã·¨/Íø¸ñµã½á¹¹ÌåÉú³É/Íø¸ñË÷ÒıÉú³É---------------*/
 			setOutputFormat(POI_X, POI_Z, POI_Y);
 
 			std::vector<glm::vec3> volumePoints;
@@ -457,7 +478,7 @@ int main()
 				glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * volumePoints.size() + volumeNormal.size()*sizeof(glm::vec3), nullptr, GL_STATIC_DRAW);
 				glBufferSubData(GL_ARRAY_BUFFER, 0, volumePoints.size() * sizeof(glm::vec3), volumePoints.data());
 				glBufferSubData(GL_ARRAY_BUFFER, volumePoints.size() * sizeof(glm::vec3), volumeNormal.size() * sizeof(glm::vec3), volumeNormal.data());
-				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//ä¼ Position
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//´«Position
 				glEnableVertexAttribArray(0);
 				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(volumeNormal.size() * sizeof(glm::vec3)));				
 				glEnableVertexAttribArray(1);
@@ -465,7 +486,7 @@ int main()
 
 				//glBindBuffer(GL_ARRAY_BUFFER, volumeVBO[layer]);
 				//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * volumePoints.size(), volumePoints.data(), GL_STATIC_DRAW);
-				//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//ä¼ normal
+				//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);//´«normal
 				//glEnableVertexAttribArray(1);
 				//glBindBuffer(0, volumeVBO[layer]);
 				
@@ -475,7 +496,9 @@ int main()
 				glBufferData(GL_ELEMENT_ARRAY_BUFFER, volumeIndex.size() * 3 * sizeof(unsigned int), volumeIndex.data(), GL_STATIC_DRAW);
 
 				glBindVertexArray(0);
-				//savePixelsToTxt(pixels, "matchPoints.txt", layer);
+
+				if(write_txt)
+					savePixelsToTxt(pixels, "matchPoints.txt", layer);
 			}
 			firstRender = false;
 			glDeleteFramebuffers(POI_Y, visiMapFBO.data());
@@ -489,11 +512,20 @@ int main()
 		
 
 
+		/*----------ÉèÖÃ¹âÔ´ÏÔÊ¾·½Ê½----------*/
+		if (lightfollowcamera)
+		{
+			lightposition = camera.CalLightPos(camera.Position,light_rel_x,light_rel_y);
+		}
+		else
+		{
+			//camera.updateLightPos(lightposition,light_x,light_y);
+			lightposition = camera.CalLightPos(glm::vec3(0,0,-light_dep),light_x,light_y);
+		}
 
-
-		/*----------------ç”»çƒå¹•-----------------*/
-		/*glStencilMaskå…è®¸æˆ‘ä»¬è®¾ç½®ä¸€ä¸ªä½æ©ç (Bitmask)ï¼Œå®ƒä¼šä¸å°†è¦å†™å…¥ç¼“å†²çš„æ¨¡æ¿å€¼è¿›è¡Œä¸(AND)è¿ç®—ã€‚
-		é»˜è®¤æƒ…å†µä¸‹è®¾ç½®çš„ä½æ©ç æ‰€æœ‰ä½éƒ½ä¸º1ï¼Œä¸å½±å“è¾“å‡º*/
+		/*----------------»­ÇòÄ»-----------------*/
+		/*glStencilMaskÔÊĞíÎÒÃÇÉèÖÃÒ»¸öÎ»ÑÚÂë(Bitmask)£¬Ëü»áÓë½«ÒªĞ´Èë»º³åµÄÄ£°åÖµ½øĞĞÓë(AND)ÔËËã¡£
+		Ä¬ÈÏÇé¿öÏÂÉèÖÃµÄÎ»ÑÚÂëËùÓĞÎ»¶¼Îª1£¬²»Ó°ÏìÊä³ö*/
 		if(linemode_Sphere)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		sphereShader.use();
@@ -502,10 +534,10 @@ int main()
 		glm::mat4 projection = glm::mat4(1.0);
 		glm::mat4 model = glm::mat4(1.0);
 		projection = glm::perspective(glm::radians(camera.Fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		sphereShader.setMat4("camera_view", view);//å®šä¹‰lookatçŸ©é˜µ);
+		sphereShader.setMat4("camera_view", view);//¶¨Òålookat¾ØÕó);
 		sphereShader.setMat4("camera_proj", projection);
 		sphereShader.setInt("free", 1);
-		//æ¨¡å‹çŸ©é˜µï¼Œæ§åˆ¶ç‰©ä½“çš„æ—‹è½¬
+		//Ä£ĞÍ¾ØÕó£¬¿ØÖÆÎïÌåµÄĞı×ª
 		sphereShader.setMat4("model", model);
 		sphereShader.setVec3("lightPos", lightposition);
 
@@ -514,14 +546,14 @@ int main()
 			glDrawElements(GL_TRIANGLES, sphereM.vertices.size() * sizeof(float) * 3, GL_UNSIGNED_INT, nullptr);
 		glBindVertexArray(0);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		/*----------------ç”»æ‘„åƒæœº-----------------*/
+		/*----------------»­ÉãÏñ»ú-----------------*/
 
 		cameraShader.use();
 
 
 		cameraShader.setMat4("view", view);
 		cameraShader.setMat4("proj", projection);
-		//æ¨¡å‹çŸ©é˜µï¼Œæ§åˆ¶ç‰©ä½“çš„æ—‹è½¬
+		//Ä£ĞÍ¾ØÕó£¬¿ØÖÆÎïÌåµÄĞı×ª
 		//glm::mat4 model_c = glm::mat4(1.0f);
 		cameraShader.setMat4("model", model);
 
@@ -533,7 +565,7 @@ int main()
 			glBindVertexArray(0);
 		}
 
-		/*----------------ç”»é‡‡æ ·ç‚¹-----------------*/
+		/*----------------»­²ÉÑùµã-----------------*/
 		if (linemode_Main)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
@@ -547,6 +579,7 @@ int main()
 		pointsShader.setMat4("proj", projection);
 		pointsShader.setMat4("model", model);
 		pointsShader.setVec4("main_color", glm::vec4(main_color.x,main_color.y,main_color.z,main_color.w));
+		pointsShader.setVec3("lightPos", lightposition);
 
 		pointsShader.setFloat("upCut", up_cut);
 		pointsShader.setFloat("downCut", down_cut);
@@ -555,6 +588,9 @@ int main()
 		pointsShader.setFloat("frontCut", front_cut);
 		pointsShader.setFloat("backCut", back_cut);
 		pointsShader.setFloat("radiusCut", radius_cut);
+
+		pointsShader.setFloat("ambientStrength", ambientStrength);
+		pointsShader.setFloat("diffStrength", diffStrength);
 
 		if (render_Main)
 		{
@@ -572,7 +608,7 @@ int main()
 		//
 		glDisable(GL_CULL_FACE);
 
-		/*----------------ç”»é™„åŠ ç½‘æ ¼-----------------*/
+		/*----------------»­¸½¼ÓÍø¸ñ-----------------*/
 		if(linemode_Attach)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
@@ -589,7 +625,7 @@ int main()
 			
 
 
-		/*-----------æ˜¾ç¤ºä¸€å±‚POI_X * POI_Zç‚¹çš„æƒ…å†µ-------------*/
+		/*-----------ÏÔÊ¾Ò»²ãPOI_X * POI_ZµãµÄÇé¿ö-------------*/
 
 		//glViewport(0, 0,500, 500);
 	 //   depthShader.use();
@@ -601,7 +637,7 @@ int main()
 		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-		/*-----------Imguiç»˜åˆ¶-------------*/
+		/*-----------Imgui»æÖÆ-------------*/
 		//renderUI(show_demo_window, show_another_window);
 
 		glfwPollEvents();
@@ -614,14 +650,14 @@ int main()
 			static float f = 0.0f;
 			static int counter = 0;
 			static int size = POI_Y;
-			std::locale::global(std::locale("en_US.UTF-8"));
+			//std::locale::global(std::locale("en_US.UTF-8"));
 
-			ImGui::Begin((const char*)u8"è®¾ç½®");                          // Create a window called "Hello, world!" and append into it.
-			ImGui::Text((const char*)u8"å½“å‰çƒå¹•ç½‘æ ¼åŠå¾„ï¼š%.3f",sphereM.Radius);
-			ImGui::Text((const char*)u8"å¹³å‡å¸§ç‡ %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-			if (ImGui::TreeNode((const char*)u8"æ–‡ä»¶é€‰æ‹©"))
+			ImGui::Begin((const char*)u8"ÉèÖÃ");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Text((const char*)u8"µ±Ç°ÇòÄ»Íø¸ñ°ë¾¶£º%.3f",sphereM.Radius);
+			ImGui::Text((const char*)u8"Æ½¾ùÖ¡ÂÊ %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			if (ImGui::TreeNode((const char*)u8"ÎÄ¼şÑ¡Ôñ"))
 			{
-				if (ImGui::Button((const char*)u8"é€‰æ‹©çƒå¹•æ–‡ä»¶"))
+				if (ImGui::Button((const char*)u8"Ñ¡ÔñÇòÄ»ÎÄ¼ş"))
 				{
 					std::string temp = FileDlg::GetFileDialog();
 					if (temp != "")
@@ -629,8 +665,8 @@ int main()
 						sphere_file = temp;
 					}
 				}
-				ImGui::Text(sphere_file.c_str());
-				if (ImGui::Button((const char*)u8"é€‰æ‹©æ‘„åƒæœºæ–‡ä»¶"))
+				ImGui::Text(Utility::string_To_UTF8(sphere_file).c_str());
+				if (ImGui::Button((const char*)u8"Ñ¡ÔñÉãÏñ»úÎÄ¼ş"))
 				{
 					std::string temp = FileDlg::GetFileDialog();
 					if (temp != "")
@@ -638,11 +674,11 @@ int main()
 						camera_file = temp;
 					}
 				}
-				ImGui::Text(camera_file.c_str());
-				if (ImGui::Button((const char*)u8"è®¡ç®—"))
+				ImGui::Text(Utility::string_To_UTF8(camera_file).c_str());
+				if (ImGui::Button((const char*)u8"¼ÆËã"))
 				{
 
-					//è¿™ä¸€æ­¥éå¸¸å…³é”®ï¼Œéœ€è¦åˆ é™¤ä¹‹å‰çš„FBO
+					//ÕâÒ»²½·Ç³£¹Ø¼ü£¬ĞèÒªÉ¾³ıÖ®Ç°µÄFBO
 					glDeleteFramebuffers(32, cameraM.depthFBO.data());
 					glDeleteTextures(32, cameraM.depthMap.data());
 					/*glDeleteFramebuffers(cameraM.cameraVer.size(), cameraM.depthFBO.data());
@@ -660,7 +696,6 @@ int main()
 
 					sphereM.ReBuid(sphere_file);
 					cameraM.ReBuid(camera_file);
-
 					LoadSphereAndLight(sphereM, cameraM, depthShader, QuardShader);
 					firstRender = true;
 					//size = 16;
@@ -672,29 +707,46 @@ int main()
 				ImGui::TreePop();
 			}
 
-			if (ImGui::TreeNode((const char*)u8"æ˜¾ç¤ºè®¾ç½®"))
+			if (ImGui::TreeNode((const char*)u8"ÏÔÊ¾ÉèÖÃ"))
 			{
-				ImGui::Checkbox((const char*)u8"çƒå¹•æ˜¾ç¤º", &render_Sphere);
+				ImGui::Checkbox((const char*)u8"ÇòÄ»ÏÔÊ¾", &render_Sphere);
 				ImGui::SameLine();
-				//ImGui::Text((const char*)u8"æ˜¯å¦å¯ç”¨çº¿æ¡†æ¨¡å¼");               // Display some text (you can use a format strings too)
-				ImGui::Checkbox((const char*)u8"çƒå¹•çº¿æ¡†æ¨¡å¼", &linemode_Sphere);      // Edit bools storing our window open/close state
+				//ImGui::Text((const char*)u8"ÊÇ·ñÆôÓÃÏß¿òÄ£Ê½");               // Display some text (you can use a format strings too)
+				ImGui::Checkbox((const char*)u8"ÇòÄ»Ïß¿òÄ£Ê½", &linemode_Sphere);      // Edit bools storing our window open/close state
 
-				ImGui::Checkbox((const char*)u8"ä¸»ä½“æ˜¾ç¤º", &render_Main);
+				ImGui::Checkbox((const char*)u8"Ö÷ÌåÏÔÊ¾", &render_Main);
 				ImGui::SameLine();
-				ImGui::Checkbox((const char*)u8"ä¸»ä½“çº¿æ¡†æ¨¡å¼", &linemode_Main);
+				ImGui::Checkbox((const char*)u8"Ö÷ÌåÏß¿òÄ£Ê½", &linemode_Main);
 
-				ImGui::Checkbox((const char*)u8"æ‘„åƒæœºæ˜¾ç¤º", &render_Camera);
+				ImGui::Checkbox((const char*)u8"ÉãÏñ»úÏÔÊ¾", &render_Camera);
 
 				//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 
-				ImGui::Checkbox((const char*)u8"ä¸»ä½“å¯ç”¨å…‰ç…§", &light_Main);
-				ImGui::ColorEdit3((const char*)u8"ä¸»ä½“é¢œè‰²", (float*)&main_color); // Edit 3 floats representing a color
+				ImGui::Checkbox((const char*)u8"Ö÷ÌåÆôÓÃ¹âÕÕ", &light_Main);
+				ImGui::Checkbox((const char*)u8"ÆôÓÃ¹âÔ´¸úËæÊÓ½Ç", &lightfollowcamera);
+				if (!lightfollowcamera)
+				{
+					ImGui::SliderFloat((const char*)u8"¹âÔ´½Ç¶ÈX", &light_x, 0, 359.0);
+					ImGui::SliderFloat((const char*)u8"¹âÔ´½Ç¶ÈY", &light_y, 0, 359.0);
+					ImGui::SliderFloat((const char*)u8"¹âÔ´¾àÀë", &light_dep, 0, 50);
+				}
+				else if(lightfollowcamera)
+				{
+					ImGui::SliderFloat((const char*)u8"¹âÔ´Ïà¶Ô½Ç¶ÈX", &light_rel_x, 0, 359.0);
+					ImGui::SliderFloat((const char*)u8"¹âÔ´Ïà¶Ô½Ç¶ÈY", &light_rel_y, 0, 359.0);
+				}
+				
+				//ImGui::SliderFloat((const char*)u8"¹âÔ´Ïà¶ÔÉãÏñ»ú½Ç¶ÈY", &light_y, -90.0, 90.0);
+				//ImGui::Text((const char*)u8"½Ç¶Èx£º", light_x);
+				ImGui::SliderFloat((const char*)u8"»·¾³¹âÏµÊı", &ambientStrength, 0.1, 1.0);
+				ImGui::SliderFloat((const char*)u8"Âş·´ÉäÏµÊı", &diffStrength, 0.1, 1.0);
+				ImGui::ColorEdit3((const char*)u8"Ö÷ÌåÑÕÉ«", (float*)&main_color); // Edit 3 floats representing a color
 
 				ImGui::TreePop();
 			}
-			if (ImGui::TreeNode((const char*)u8"é™„åŠ ç½‘æ ¼"))
+			if (ImGui::TreeNode((const char*)u8"¸½¼ÓÍø¸ñ"))
 			{
-				if (ImGui::Button((const char*)u8"é€‰æ‹©é™„åŠ ç½‘æ ¼æ–‡ä»¶"))
+				if (ImGui::Button((const char*)u8"Ñ¡Ôñ¸½¼ÓÍø¸ñÎÄ¼ş"))
 				{
 					std::string temp = FileDlg::GetFileDialog();
 					if (temp != "")
@@ -710,26 +762,28 @@ int main()
 						render_Attach = true;
 					RecentFile::refreshAttach(attach_file, render_Attach);
 				}
-				ImGui::Text(attach_file.c_str());
-				if (render_Attach)
+				ImGui::Text(Utility::string_To_UTF8(attach_file).c_str());
+				if (render_Attach || attach_file !="")
 				{
-					if (ImGui::Button((const char*)u8"åˆ é™¤é™„åŠ ç½‘æ ¼æ–‡ä»¶"))
+					if (ImGui::Button((const char*)u8"É¾³ı¸½¼ÓÍø¸ñÎÄ¼ş"))
 					{
 						attach_file = "";
 						render_Attach = false;
 						RecentFile::refreshAttach(attach_file, render_Attach);
 					}
-					ImGui::Checkbox((const char*)u8"é™„åŠ ç½‘æ ¼çº¿æ¡†æ¨¡å¼", &linemode_Attach);
+					ImGui::Checkbox((const char*)u8"ÏÔÊ¾¸½¼ÓÍø¸ñ", &render_Attach);
+					ImGui::SameLine();
+					ImGui::Checkbox((const char*)u8"¸½¼ÓÍø¸ñÏß¿òÄ£Ê½", &linemode_Attach);
 				}
-				ImGui::Text(attach_file.c_str());
 				ImGui::TreePop();
 			}
 
-			if (ImGui::TreeNode((const char*)u8"è®¡ç®—è®¾ç½®"))
+			if (ImGui::TreeNode((const char*)u8"¼ÆËãÉèÖÃ"))
 			{
-				ImGui::SliderFloat((const char*)u8"è®¾å®šè®¡ç®—ç‚¹äº‘çš„è¾¹é•¿", &points_side_length, 5.0, 20.0);
-				ImGui::SliderInt((const char*)u8"è®¾å®šå¤§å°", &size, 16, 1024);
-				if (ImGui::Button((const char*)u8"é‡ç½®å¤§å°"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
+				ImGui::SliderFloat((const char*)u8"Éè¶¨¼ÆËãµãÔÆ±ß³¤", &points_side_length, ims.points_side_length_low, ims.points_side_length_up);
+				ImGui::SliderInt((const char*)u8"Éè¶¨¼ÆËãµãÔÆÃÜ¶È", &size, ims.points_density_low, ims.points_density_up);
+				ImGui::Checkbox((const char*)u8"±£´æ¼ÆËã½á¹û(matchPoints.txt)", & write_txt);
+				if (ImGui::Button((const char*)u8"ÖØÖÃ¼ÆËã"))                        // Buttons return true when clicked (most widgets return true when edited/activated)
 				{
 					POI_X = size;
 					POI_Y = size;
@@ -738,19 +792,19 @@ int main()
 				}
 				ImGui::TreePop();
 			}
-			if (ImGui::TreeNode((const char*)u8"å‰”é™¤è®¾ç½®"))
+			if (ImGui::TreeNode((const char*)u8"ÌŞ³ıÉèÖÃ"))
 			{
-				ImGui::SliderFloat((const char*)u8"çƒå½¢å‰”é™¤åŠå¾„", &radius_cut, 0.2, 20.0);
+				ImGui::SliderFloat((const char*)u8"ÇòĞÎÌŞ³ı°ë¾¶", &radius_cut, ims.radius_cut_low, ims.radius_cut_up);
 
 
-				ImGui::SliderFloat((const char*)u8"ä¸Šå‰”é™¤é¢", &up_cut, 0.2, 20.0);
-				ImGui::SliderFloat((const char*)u8"ä¸‹å‰”é™¤é¢", &down_cut, -20.0, -0.2);
-				ImGui::SliderFloat((const char*)u8"å³å‰”é™¤é¢", &right_cut, 0.2, 20.0);
-				ImGui::SliderFloat((const char*)u8"å·¦å‰”é™¤é¢", &left_cut, -20.0, -0.2);
-				ImGui::SliderFloat((const char*)u8"åå‰”é™¤é¢", &back_cut, 0.2, 20.0);
-				ImGui::SliderFloat((const char*)u8"å‰å‰”é™¤é¢", &front_cut, -20.0, -0.2);
+				ImGui::SliderFloat((const char*)u8"ÉÏÌŞ³ıÃæ", &up_cut, ims.up_cut_low, ims.up_cut_up);
+				ImGui::SliderFloat((const char*)u8"ÏÂÌŞ³ıÃæ", &down_cut, ims.down_cut_low, ims.down_cut_up);
+				ImGui::SliderFloat((const char*)u8"ÓÒÌŞ³ıÃæ", &right_cut, ims.right_cut_low, ims.right_cut_up);
+				ImGui::SliderFloat((const char*)u8"×óÌŞ³ıÃæ", &left_cut, ims.left_cut_low, ims.left_cut_up);
+				ImGui::SliderFloat((const char*)u8"ºóÌŞ³ıÃæ", &back_cut, ims.back_cut_low, ims.back_cut_up);
+				ImGui::SliderFloat((const char*)u8"Ç°ÌŞ³ıÃæ", &front_cut, ims.front_cut_low, ims.front_cut_up);
 
-				if (ImGui::Button((const char*)u8"åº”ç”¨å‰”é™¤è®¾ç½®è¿›è¡Œè®¡ç®—"))
+				if (ImGui::Button((const char*)u8"Ó¦ÓÃÌŞ³ıÉèÖÃ½øĞĞ¼ÆËã"))
 				{
 					sphereM.Radius = radius_cut;
 					sphereM.up_cut = up_cut;
@@ -791,7 +845,7 @@ int main()
 	}
 
 	
-	//è¾“å‡ºPNGæ ¼å¼å›¾åƒ
+	//Êä³öPNG¸ñÊ½Í¼Ïñ
 	//int err = SOIL_save_image("Points_visiable.png", SOIL_SAVE_TYPE_PNG, 2500,50, SOIL_LOAD_RGBA, pixels.data());
 	//if (err)
 	//	cout << "Done" << endl;
@@ -874,7 +928,7 @@ void renderQuad()
 
 
 
-void mouse_callback(GLFWwindow*window, double xpos, double ypos)//é¼ æ ‡åæ ‡çš„è°ƒç”¨ï¼Œç”¨äºæ§åˆ¶è§†è§’
+void mouse_callback(GLFWwindow*window, double xpos, double ypos)//Êó±ê×ø±êµÄµ÷ÓÃ£¬ÓÃÓÚ¿ØÖÆÊÓ½Ç
 {
 	if (firstmouse)
 	{
@@ -904,10 +958,6 @@ void processInput(GLFWwindow* window)
 		camera.ProcessKeyboard(FORWARD, deltatime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera.ProcessKeyboard(BACKWARD, deltatime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltatime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltatime);
 }
 
 void processMouseButton(GLFWwindow* window,int &count,bool &changed)
@@ -937,6 +987,7 @@ void processMousePress(GLFWwindow* window)
 		//lastX = lx;
 		//lastY = ly;
 		camera.ProcessMousePressMove(xoffset, yoffset);
+		//camera.updateLightPos(lightposition, light_x, light_y);
 	}
 	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{

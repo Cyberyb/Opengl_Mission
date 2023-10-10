@@ -23,6 +23,8 @@ public:
     unsigned int VAO;
     unsigned int VBO;
 
+    std::string filepath;
+
     std::vector<glm::vec3> camerapos;
     std::vector<glm::vec3> camerarot;
     std::vector<glm::vec4> camerafru;
@@ -83,6 +85,7 @@ void CameraMesh::ReBuid(const std::string& filename)
 
 void CameraMesh::readCameraMesh(const std::string& filename, vector<cameraVertex>& cameraVer)
 {
+    this->filepath = filename;
     //std::locale::global(std::locale("en_US.UTF-8"));
     if (!cameraVer.empty())
     {

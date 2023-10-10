@@ -145,6 +145,16 @@ public:
 		else if (Fov <= 10.0f)
 			Fov = 10.0f;
 	}
+
+	glm::vec3 CalLightPos(glm::vec3 lightPos, float& light_yaw, float& light_pitch)
+	{
+		glm::mat4 mat(1.0);
+		glm::mat4 rotationMatrix = glm::rotate(glm::rotate(mat, glm::radians(light_yaw), glm::vec3(0.0f, 1.0f, 0.0f)), glm::radians(light_pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::vec4 rotatedPosition = rotationMatrix * glm::vec4(lightPos, 1.0);
+		lightPos = glm::vec3(rotatedPosition);
+		//std::cout << lightPos.x << lightPos.y << lightPos.z << std::endl;
+		return lightPos;
+	}
 private:
 	void updateCameraVectors()
 	{
@@ -168,6 +178,8 @@ private:
 		Position = glm::vec3(r * glm::vec4(Position,1.0));
 		Front = Target - Position;
 	}
+
+
 };
 
 

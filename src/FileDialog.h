@@ -6,13 +6,28 @@
 #include<string.h>
 #include <shlobj.h>
 #include <locale>
-#include <codecvt>
+//#include <codecvt>
 
 #define STRICT_TYPED_ITEMIDS
 
 namespace FileDlg 
 {
 	char selectedFilePath[1024] = "";
+
+	std::string wideCharToMultiByte(wchar_t* pWCStrKey)
+	{
+		//第一次调用确认转换后单字节字符串的长度，用于开辟空间
+		int pSize = WideCharToMultiByte(CP_OEMCP, 0, pWCStrKey, wcslen(pWCStrKey), NULL, 0, NULL, NULL);
+		char* pCStrKey = new char[pSize + 1];
+		//第二次调用将双字节字符串转换成单字节字符串
+		WideCharToMultiByte(CP_OEMCP, 0, pWCStrKey, wcslen(pWCStrKey), pCStrKey, pSize, NULL, NULL);
+		pCStrKey[pSize] = '\0';
+
+		//如果想要转换成string，直接赋值即可
+		string pKey = pCStrKey;
+		return pKey;
+	}
+
 
 	std::string GetFileDialog()
 	{
@@ -54,11 +69,12 @@ namespace FileDlg
 
 
 			//printf("%S", szfile);
-			std::wstring wstr(szfile);
-			std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-			std::string narrowString = converter.to_bytes(wstr);
-			std::cout << narrowString << std::endl;
-			return narrowString;
+			//std::wstring wstr(szfile);
+			//std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+			//std::string narrowString = converter.to_bytes(szfile);
+			//std::cout << narrowString << std::endl;
+			std::string path = wideCharToMultiByte(szfile);
+			return path;
 		}
 
 		return std::string("");

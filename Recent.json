@@ -3,12 +3,60 @@
 	{
 		"path" : ""
 	},
+	"imgui" : 
+	{
+		"back_cut" : 
+		{
+			"low" : 0.20000000000000001,
+			"up" : 20.0
+		},
+		"down_cut" : 
+		{
+			"low" : -20.0,
+			"up" : -0.20000000000000001
+		},
+		"front_cut" : 
+		{
+			"low" : -20.0,
+			"up" : -0.20000000000000001
+		},
+		"left_cut" : 
+		{
+			"low" : -20.0,
+			"up" : -0.20000000000000001
+		},
+		"points_density" : 
+		{
+			"low" : 16,
+			"up" : 1024
+		},
+		"points_side_length" : 
+		{
+			"low" : 5.0,
+			"up" : 30.0
+		},
+		"radius_cut" : 
+		{
+			"low" : 0.20000000000000001,
+			"up" : 20.0
+		},
+		"right_cut" : 
+		{
+			"low" : 0.20000000000000001,
+			"up" : 20.0
+		},
+		"up_cut" : 
+		{
+			"low" : 0.20000000000000001,
+			"up" : 20.0
+		}
+	},
 	"light" : 
 	{
-		"path" : ""
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\light.txt"
 	},
 	"sphere" : 
 	{
-		"path" : ""
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\mesh.txt"
 	}
 }
