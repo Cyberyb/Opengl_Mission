@@ -34,17 +34,15 @@ void savePixelsToTxt(const vector<unsigned char>&pixels ,std::string pathname,in
         if (pixels[i] == 255)//该点为备选点
         {
             count++;
-            //float num = i / 4.0;
             float x = (i % WIDTH) * (5.5/ WIDTH) + (-2.75);
             float y = layer * (5.5/LAYER) + (-2.75);
             float z = (i / HEIGHT) * (5.5/HEIGHT) + (-2.75);
-            outputFile << x << " " // Red value
-                << y << " " // Green value
-                << z; // Alpha value
-            outputFile << "\n";
+            outputFile << x << " "
+                       << y << " "
+                       << z << "\n";
         }
-
     }
+
     cout << "Match Points counts: " << count << endl;
     // Close the output file
     outputFile.close();
