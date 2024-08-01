@@ -1,7 +1,7 @@
 {
 	"attach" : 
 	{
-		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\temp\\temp\\方案1\\座舱和人mesh.mesh"
+		"path" : ""
 	},
 	"imgui" : 
 	{
@@ -53,10 +53,10 @@
 	},
 	"light" : 
 	{
-		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\light.txt"
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\测试相机.light.txt"
 	},
 	"sphere" : 
 	{
-		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\mesh.txt"
+		"path" : "E:\\OpenGL\\Code\\Opengl_Mission\\顶扣球mesh.mesh"
 	}
 }

@@ -32,7 +32,7 @@ float far_plane = 3.0;
 
 bool InSight(vec4 pos)//判断点是否在视野内
 {
-    if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1)
+    if(pos.x > -1 && pos.x < 1 && pos.y > -1 && pos.y < 1 && pos.z < 1 && pos.z > -1)
         return true;
     else
         return false;
@@ -60,6 +60,7 @@ void main()
         float u = (pos.x) * 0.5 + 0.5;
         float v = (pos.y) * 0.5 + 0.5;
         float depthValue = texture(depthMap[i], vec2(u,v)).r;
+
 
         //计算当前点的深度
         float pointdepth = (pos.z)*0.5+0.5;
